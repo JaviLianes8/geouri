@@ -8,4 +8,6 @@ All notable changes to this project are documented here. The format follows
 
 ## [0.1.0]
 
-- First release.
+- First release: `parse` and `build` for geo: URIs (RFC 5870), covering latitude,
+  longitude, optional altitude, the `u` uncertainty and `crs` parameters, arbitrary
+  extra parameters, and coordinate range validation.
