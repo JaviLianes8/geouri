@@ -71,7 +71,18 @@ def encode_value(value: str) -> str:
 
 def plain(value: Decimal) -> str:
     """Write a decimal without exponent, trailing zeros or a negative zero."""
+    # Built from the digit tuple: normalize() and format() would round to the context.
     if value == 0:
         return "0"
-    # normalize() strips trailing zeros; "f" then spells out any exponent.
-    return format(value.normalize(), "f")
+    sign, digit_tuple, exponent = value.as_tuple()
+    digits = "".join(map(str, digit_tuple)).lstrip("0")
+    exp = int(exponent)
+    while digits.endswith("0"):
+        digits, exp = digits[:-1], exp + 1
+    if exp >= 0:
+        text = digits + "0" * exp
+    elif len(digits) > -exp:
+        text = f"{digits[:exp]}.{digits[exp:]}"
+    else:
+        text = "0." + "0" * (-exp - len(digits)) + digits
+    return ("-" if sign else "") + text

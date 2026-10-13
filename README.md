@@ -28,10 +28,11 @@ print(dict(uri.params))  # {'type': 'this-that', 'flag': None}
 print(uri)  # geo:66,30,183;u=6.5;type=this-that;flag
 ```
 
-`parse` follows the grammar of section 3.3 to the letter: ASCII digits only, at most two
+`parse` follows the grammar of section 3.3: ASCII digits only, at most two
 integer digits of latitude and three of longitude in WGS-84, `crs` first and `u` second,
 each at most once, parameter names made of letters, digits and `-`, values made of the
-allowed characters or valid percent-encoded UTF-8. Ranges are checked on the exact decimal
+allowed characters or valid percent-encoding. One deliberate tightening: decoded values
+must be UTF-8, since they are returned as `str`. Ranges are checked on the exact decimal
 text, so `geo:90.0000000000000000001,0` is refused even though it rounds to `90.0` as a
 float. Other CRS labels parse, but their coordinates are not range checked because RFC 5870
 only defines WGS-84.
@@ -76,7 +77,8 @@ print(build(1, 2, crs="WGS84", params=params))  # geo:1,2;name=Caf%C3%A9%20&%20b
 
 `build` validates everything `parse` checks, writes each number in its shortest exact
 decimal form (a float reads back as the same float, a `Decimal` keeps its digits), writes
-longitude 0 at a pole as section 3.4.2 recommends, leaves out the default `crs`, and
+longitude 0 at a pole as section 3.4.2 recommends, writes the date line as 180 so equal
+URIs print the same text, leaves out the default `crs`, and
 percent-encodes parameter values. Booleans, strings and non-finite numbers are refused.
 
 ### Compare
@@ -118,7 +120,8 @@ the Maps section of the
 [Android common intents guide](https://developer.android.com/guide/components/intents-common):
 the part before `?` is an RFC 5870 point, `z` is a zoom from 1 to 23, and `q` is either
 `lat,lng(label)` or free search text, with `+` or `%20` for spaces. Other query fields are
-kept in `extras`.
+kept in `extras`. Pin-shaped `q` text whose coordinates are out of range is read as search
+text, and `build_android_query` refuses text that a map app would read as a pin.
 
 ### Command line
 
@@ -130,7 +133,7 @@ invalid (latitude-range): geo:94,0
 
 Prints the canonical form of each URI, or reads one per line from standard input when none
 are given. `--json` prints the fields as JSON, `--android` reads the Android form and
-prints JSON. The exit status is 1 if any URI is invalid and 2 for a usage error.
+prints JSON. JSON numbers are the exact decimals of the URI. The exit status is 1 if any URI is invalid and 2 for a usage error.
 
 ## API
 

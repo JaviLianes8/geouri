@@ -29,7 +29,11 @@ All notable changes to this project are documented here. The format follows
 - Ranges are checked on the exact decimal text and only for WGS-84.
 - `build` writes the shortest exact decimal (no more rounding for very small numbers),
   omits `crs=wgs84`, writes longitude 0 at a pole, and refuses booleans and bad labels.
-- `GeoURI` validates on construction and its `params` are a read-only mapping.
+- `GeoURI` validates on construction and its `params` are a read-only mapping; it still
+  pickles and copies.
+- `build` refuses strings (0.1.0 converted them with `float()`); wrong argument types raise
+  `TypeError` throughout.
+- WGS-84 longitude -180 is written as 180, so equal URIs print the same canonical text.
 
 ## [0.1.0]
 

@@ -7,10 +7,12 @@ import contextlib
 import json
 import sys
 from collections.abc import Iterable, Sequence
+from decimal import Decimal
 from typing import Any, TextIO
 
 from ._android import AndroidGeo, parse_android
 from ._errors import GeoURIError
+from ._grammar import plain
 from ._model import GeoURI
 from ._parse import parse
 
@@ -48,10 +50,10 @@ def main(
     for uri in uris:
         try:
             if args.android:
-                line = json.dumps(_android(parse_android(uri)), ensure_ascii=False)
+                line = _json(_android(parse_android(uri)))
             else:
                 parsed = parse(uri)
-                line = json.dumps(_fields(parsed), ensure_ascii=False) if args.json else str(parsed)
+                line = _json(_fields(parsed)) if args.json else str(parsed)
         except GeoURIError as error:
             err.write(f"invalid ({error.reason}): {_shown(uri)}\n")
             status = 1
@@ -61,12 +63,13 @@ def main(
 
 
 def _fields(uri: GeoURI) -> dict[str, Any]:
+    lat, lon, alt, unc = uri._exact
     return {
         "uri": str(uri),
-        "lat": uri.lat,
-        "lon": uri.lon,
-        "alt": uri.alt,
-        "uncertainty": uri.uncertainty,
+        "lat": lat,
+        "lon": lon,
+        "alt": alt,
+        "uncertainty": unc,
         "crs": uri.crs,
         "params": dict(uri.params),
     }
@@ -81,6 +84,16 @@ def _android(geo: AndroidGeo) -> dict[str, Any]:
         "label": geo.label,
         "extras": dict(geo.extras),
     }
+
+
+def _json(value: Any) -> str:
+    """JSON with numbers written as their exact decimal text, never rounded or infinite."""
+    if isinstance(value, Decimal):
+        return plain(value)
+    if isinstance(value, dict):
+        items = (f"{json.dumps(k, ensure_ascii=False)}: {_json(v)}" for k, v in value.items())
+        return "{" + ", ".join(items) + "}"
+    return json.dumps(value, ensure_ascii=False)
 
 
 def _lines(stream: TextIO) -> Iterable[str]:

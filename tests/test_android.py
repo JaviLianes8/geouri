@@ -96,7 +96,6 @@ def test_results_are_hashable() -> None:
         ("geo:1,2?z=-1", "zoom"),
         ("geo:1,2?z=1.5", "zoom"),
         ("geo:1,2?z=\u0661", "zoom"),
-        ("geo:0,0?q=95,0(x)", "latitude-range"),
         ("geo:95,0?z=3", "latitude-range"),
         ("geo:1,2?z=3#x", "fragment"),
         ("http:1,2?z=3", "scheme"),

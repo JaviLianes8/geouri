@@ -34,7 +34,9 @@ def test_each_example_parses_or_fails_as_the_rfc_says(uri: str) -> None:
             parse(uri)
         assert caught.value.reason == INVALID.get(uri, "coordinates")
     else:
-        assert str(parse(str(parse(uri)))) == str(parse(uri))
+        parsed = parse(uri)
+        assert parse(str(parsed)) == parsed
+        assert str(parse(str(parsed))) == str(parsed)
 
 
 def test_section_6_1_reads_the_three_components() -> None:

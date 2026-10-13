@@ -10,6 +10,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
+from typing import Any
 from urllib.parse import quote
 
 from ._build import build
@@ -38,7 +39,15 @@ class AndroidGeo:
     query: str | None = None
     pin: GeoURI | None = None
     label: str | None = None
-    extras: Mapping[str, str] = field(default_factory=lambda: MappingProxyType({}), hash=False)
+    extras: Mapping[str, str] = field(default_factory=dict, hash=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "extras", MappingProxyType(dict(self.extras)))
+
+    def __reduce__(self) -> tuple[Any, ...]:
+        # The read-only extras mapping cannot be pickled; rebuild from a plain dict.
+        fields = (self.point, self.zoom, self.query, self.pin, self.label, dict(self.extras))
+        return (AndroidGeo, fields)
 
 
 def parse_android(uri: str) -> AndroidGeo:
@@ -60,7 +69,7 @@ def parse_android(uri: str) -> AndroidGeo:
     zoom = _zoom(fields.pop("z")) if "z" in fields else None
     text = fields.pop("q", None)
     pin, label, search = _search(text)
-    return AndroidGeo(point, zoom, search, pin, label, MappingProxyType(fields))
+    return AndroidGeo(point, zoom, search, pin, label, fields)
 
 
 def build_android(
@@ -74,8 +83,15 @@ def build_android(
 
 
 def build_android_query(query: str, *, zoom: int | None = None) -> str:
-    """Write `geo:0,0?q=text`, asking the map app to search for an address or place."""
-    return f"geo:0,0?q={_encode(query)}{_zoom_suffix(zoom, '&')}"
+    """Write `geo:0,0?q=text`, asking the map app to search for an address or place.
+
+    Text shaped like `lat,lng` or `lat,lng(label)` with valid coordinates is refused:
+    map apps read it as a pin, so use `build_android` for it.
+    """
+    encoded = _encode(query)
+    if _search(query)[0] is not None:
+        raise GeoURIError("query", f"search text reads as a pin; use build_android: {query!r}")
+    return f"geo:0,0?q={encoded}{_zoom_suffix(zoom, '&')}"
 
 
 def _search(text: str | None) -> tuple[GeoURI | None, str | None, str | None]:
@@ -84,8 +100,12 @@ def _search(text: str | None) -> tuple[GeoURI | None, str | None, str | None]:
     match = _PIN.fullmatch(text)
     if match is None:
         return None, None, text
+    try:
+        pin = parse(f"geo:{match.group(1)},{match.group(2)}")
+    except GeoURIError:
+        return None, None, text  # pin-shaped but not a WGS-84 point: plain search text
     # "lat,lng()" is a pin with an empty label, read as no label.
-    return parse(f"geo:{match.group(1)},{match.group(2)}"), match.group(3) or None, None
+    return pin, match.group(3) or None, None
 
 
 def _zoom(text: str) -> int:
@@ -126,8 +146,10 @@ def _decode(text: str) -> str:
 
 
 def _encode(text: str) -> str:
-    if not isinstance(text, str) or not text:
-        raise GeoURIError("query", f"search text and labels must be non-empty: {text!r}")
+    if not isinstance(text, str):
+        raise TypeError(f"search text and labels must be str, not {type(text).__name__}")
+    if not text:
+        raise GeoURIError("query", "search text and labels cannot be empty")
     try:
         return quote(text, safe="", errors="strict")
     except UnicodeEncodeError:

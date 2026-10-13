@@ -27,14 +27,11 @@ def test_construction_validates_and_normalizes() -> None:
         ({"lat": 0, "lon": 0, "alt": float("-inf")}, "number"),
         ({"lat": 0, "lon": 0, "crs": ""}, "crs"),
         ({"lat": 0, "lon": 0, "crs": "a b"}, "crs"),
-        ({"lat": 0, "lon": 0, "crs": 5}, "crs"),
         ({"lat": 0, "lon": 0, "params": {"u": "1"}}, "param-name"),
         ({"lat": 0, "lon": 0, "params": {"CRS": "x"}}, "param-name"),
         ({"lat": 0, "lon": 0, "params": {"a_b": "x"}}, "param-name"),
-        ({"lat": 0, "lon": 0, "params": {7: "x"}}, "param-name"),
         ({"lat": 0, "lon": 0, "params": {"a": "1", "A": "2"}}, "duplicate-param"),
         ({"lat": 0, "lon": 0, "params": {"a": ""}}, "param-value"),
-        ({"lat": 0, "lon": 0, "params": {"a": 1}}, "param-value"),
         ({"lat": 0, "lon": 0, "params": {"a": "\ud800"}}, "param-value"),
     ],
 )
@@ -48,6 +45,21 @@ def test_construction_rejects_with_the_reason(kwargs: dict[str, object], reason:
 def test_construction_rejects_non_numbers(bad: object) -> None:
     with pytest.raises(TypeError):
         GeoURI(bad, 0)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"crs": 5},
+        {"params": None},
+        {"params": [("a", "b")]},
+        {"params": {7: "x"}},
+        {"params": {"a": 1}},
+    ],
+)
+def test_construction_rejects_wrong_types(kwargs: dict[str, object]) -> None:
+    with pytest.raises(TypeError):
+        GeoURI(0, 0, **kwargs)  # type: ignore[arg-type]
 
 
 def test_is_frozen_and_params_are_read_only() -> None:

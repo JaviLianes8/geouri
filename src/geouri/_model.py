@@ -22,6 +22,8 @@ class GeoURI:
     Numbers keep their exact decimal value next to the float fields, so ranges, `==`,
     `hash` and `str` follow the text that was parsed rather than a rounded float.
     `str()` gives the canonical URI. Equality follows section 3.4.4; see `compare`.
+    `dataclasses.replace` rebuilds from the float fields, so digits beyond float precision
+    are not carried over; build a new URI from `Decimal` values to keep them.
     """
 
     lat: float
@@ -41,9 +43,9 @@ class GeoURI:
             None if self.alt is None else _exact(self.alt, "altitude"),
             None if self.uncertainty is None else _exact(self.uncertainty, "uncertainty"),
         )
-        crs = label(self.crs, "crs", "crs label") if isinstance(self.crs, str) else ""
-        if not crs:
-            raise GeoURIError("crs", f"invalid crs label: {self.crs!r}")
+        if not isinstance(self.crs, str):
+            raise TypeError(f"crs must be a str, not {type(self.crs).__name__}")
+        crs = label(self.crs, "crs", "crs label")
         _check_ranges(exact, crs)
         floats = [None if v is None else float(v) for v in exact]
         for name, value in zip(("lat", "lon", "alt", "uncertainty"), floats, strict=True):
@@ -58,8 +60,9 @@ class GeoURI:
         return self.crs == DEFAULT_CRS
 
     def __str__(self) -> str:
-        lat, lon, alt, unc = self._exact
-        if self.is_wgs84 and abs(lat) == 90:
+        lat, _, alt, unc = self._exact
+        lon = self._key()[2]
+        if lon is None:
             lon = Decimal(0)  # section 3.4.2: longitude SHOULD be 0 at a pole
         text = f"geo:{plain(lat)},{plain(lon)}"
         if alt is not None:
@@ -80,11 +83,16 @@ class GeoURI:
     def __hash__(self) -> int:
         return hash((self._key(), frozenset(self.params.items())))
 
+    def __reduce__(self) -> tuple[Any, ...]:
+        # The read-only params mapping cannot be pickled; rebuild from exact values.
+        return (new_geouri, (self._exact, self.crs, dict(self.params)))
+
     def _key(self) -> tuple[Any, ...]:
         lat, lon, alt, unc = self._exact
         lon_key: Decimal | None = lon
+        # copy_abs never rounds, unlike abs() under the decimal context precision.
         if self.is_wgs84:
-            if abs(lat) == 90:
+            if lat.copy_abs() == 90:
                 lon_key = None  # poles case
             elif lon == -180:
                 lon_key = Decimal(180)  # date line case
@@ -96,7 +104,8 @@ def compare(a: GeoURI, b: GeoURI) -> bool | None:
 
     Returns None where the RFC calls the result undefined: everything else matches and
     the same unknown parameter names appear, but some decoded values differ, which an
-    implementation that does not know those parameters cannot judge.
+    implementation that does not know those parameters cannot judge. URIs whose unknown
+    parameter names differ are not equivalent (the first rule for unknown parameters).
     """
     if a._key() != b._key() or set(a.params) != set(b.params):
         return False
@@ -137,15 +146,19 @@ def _check_ranges(exact: tuple[Decimal, Decimal, Decimal | None, Decimal | None]
 
 
 def _check_params(params: Mapping[str, str | None]) -> dict[str, str | None]:
+    if not isinstance(params, Mapping):
+        raise TypeError(f"params must be a mapping, not {type(params).__name__}")
     checked: dict[str, str | None] = {}
     for raw, value in params.items():
-        name = label(raw, "param-name", "parameter name") if isinstance(raw, str) else ""
-        if not name or name in _RESERVED:
-            raise GeoURIError("param-name", f"invalid parameter name: {raw!r}")
+        if not isinstance(raw, str) or not (value is None or isinstance(value, str)):
+            raise TypeError(f"parameters map str to str or None, not {raw!r}: {value!r}")
+        name = label(raw, "param-name", "parameter name")
+        if name in _RESERVED:
+            raise GeoURIError("param-name", f"crs and u have their own fields: {raw!r}")
         if name in checked:
             raise GeoURIError("duplicate-param", f"parameter {name!r} appears twice")
-        if value is not None and (not isinstance(value, str) or not value):
-            raise GeoURIError("param-value", f"invalid value for {name!r}: {value!r}")
+        if value == "":
+            raise GeoURIError("param-value", f"the value of {name!r} cannot be empty")
         if value is not None:
             try:
                 value.encode("utf-8")
