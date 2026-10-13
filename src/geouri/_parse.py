@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from ._errors import GeoURIError, Reason
+from ._errors import GeoURIError
 from ._grammar import NUM, PNUM, WGS84_LAT, WGS84_LON, decode_value, label, number
 from ._model import DEFAULT_CRS, GeoURI, new_geouri
 
@@ -55,18 +55,12 @@ def _parse_params(
         if name == "crs":
             if index != 0:
                 raise GeoURIError("param-order", "crs must be the first parameter")
-            crs = label(_require(sep, value, "crs"), "crs", "crs label")
+            # A missing "=value" reads as an empty value, which the label rule refuses.
+            crs = label(value, "crs", "crs label")
         elif name == "u":
             if index != (1 if "crs" in seen else 0):
                 raise GeoURIError("param-order", "u must follow crs and precede other parameters")
-            text = _require(sep, value, "uncertainty")
-            uncertainty = number(text, PNUM, "uncertainty", "uncertainty")
+            uncertainty = number(value, PNUM, "uncertainty", "uncertainty")
         else:
             params[name] = decode_value(value) if sep else None
     return crs, uncertainty, params
-
-
-def _require(sep: str, value: str, reason: Reason) -> str:
-    if not sep:
-        raise GeoURIError(reason, f"the {reason} parameter needs a value")
-    return value

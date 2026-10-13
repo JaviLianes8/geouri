@@ -20,7 +20,7 @@ from ._parse import parse
 
 MIN_ZOOM = 1
 MAX_ZOOM = 23
-_PIN = re.compile(rf"({NUM.pattern}),({NUM.pattern})(?:\((.+)\))?", re.DOTALL)
+_PIN = re.compile(rf"({NUM.pattern}),({NUM.pattern})(?:\((.*)\))?", re.DOTALL)
 _HEX = frozenset("0123456789ABCDEFabcdef")
 
 
@@ -84,7 +84,8 @@ def _search(text: str | None) -> tuple[GeoURI | None, str | None, str | None]:
     match = _PIN.fullmatch(text)
     if match is None:
         return None, None, text
-    return parse(f"geo:{match.group(1)},{match.group(2)}"), match.group(3), None
+    # "lat,lng()" is a pin with an empty label, read as no label.
+    return parse(f"geo:{match.group(1)},{match.group(2)}"), match.group(3) or None, None
 
 
 def _zoom(text: str) -> int:

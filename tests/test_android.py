@@ -57,6 +57,8 @@ def test_query_text_is_encoded_as_the_guide_shows() -> None:
 def test_pin_without_label_and_with_parentheses_in_the_label() -> None:
     assert parse_android("geo:0,0?q=1,2").pin == parse("geo:1,2")
     assert parse_android("geo:0,0?q=1,2").label is None
+    empty = parse_android("geo:0,0?q=1,2()")
+    assert (empty.pin, empty.label, empty.query) == (parse("geo:1,2"), None, None)
     uri = build_android(1, 2, label="Bar (old) & co", zoom=3)
     assert uri == "geo:0,0?q=1,2(Bar%20%28old%29%20%26%20co)&z=3"
     geo = parse_android(uri)

@@ -36,9 +36,10 @@ def label(text: str, reason: Reason, what: str) -> str:
 
 
 def decode_value(text: str) -> str:
-    """Percent-decode a `pvalue`, refusing characters outside `paramchar` and bad UTF-8."""
-    if not text:
-        raise GeoURIError("param-value", "a parameter value cannot be empty")
+    """Percent-decode a `pvalue`, refusing characters outside `paramchar` and bad UTF-8.
+
+    An empty value is left for GeoURI to refuse, as it refuses one passed by a caller.
+    """
     out = bytearray()
     i = 0
     while i < len(text):
@@ -72,5 +73,5 @@ def plain(value: Decimal) -> str:
     """Write a decimal without exponent, trailing zeros or a negative zero."""
     if value == 0:
         return "0"
-    text = format(value.normalize(), "f")
-    return text.rstrip("0").rstrip(".") if "." in text else text
+    # normalize() strips trailing zeros; "f" then spells out any exponent.
+    return format(value.normalize(), "f")
