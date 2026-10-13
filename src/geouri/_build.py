@@ -1,40 +1,37 @@
-"""Build geo: URIs (RFC 5870) from coordinates."""
+"""Build canonical geo: URIs (RFC 5870) from numbers."""
 
 from __future__ import annotations
 
-from ._model import GeoURIError
-from ._validate import validate
+from collections.abc import Mapping
+from decimal import Decimal
+from typing import cast
+
+from ._model import DEFAULT_CRS, GeoURI
 
 
 def build(
-    lat: float,
-    lon: float,
+    lat: float | Decimal,
+    lon: float | Decimal,
     *,
-    alt: float | None = None,
-    u: float | None = None,
+    alt: float | Decimal | None = None,
+    u: float | Decimal | None = None,
     crs: str | None = None,
+    params: Mapping[str, str | None] | None = None,
 ) -> str:
-    """Build a geo: URI from coordinates, validating latitude and longitude."""
-    validate(lat, lon, u)
-    text = f"geo:{_format_number(lat)},{_format_number(lon)}"
-    if alt is not None:
-        text += f",{_format_number(alt)}"
-    if crs is not None:
-        text += f";crs={crs.lower()}"
-    if u is not None:
-        text += f";u={_format_number(u)}"
-    return text
+    """Build a canonical geo: URI, validating every part first.
 
-
-def _format_number(value: float) -> str:
-    number = float(value)
-    if number != number or number in (float("inf"), float("-inf")):
-        raise GeoURIError(f"not a finite number: {value!r}")
-    if number == 0.0:
-        number = 0.0
-    text = repr(number)
-    if "e" in text or "E" in text:
-        text = f"{number:.12f}"
-    if "." in text:
-        text = text.rstrip("0").rstrip(".")
-    return text
+    Numbers are written in their shortest exact decimal form (a `Decimal` keeps its
+    digits), the longitude is written as 0 at a pole, `crs` must be a label and is
+    omitted when it is the default, and extra parameter values are percent-encoded.
+    A parameter that maps to None is written as a flag without a value.
+    """
+    # GeoURI reads int, float and Decimal exactly; the float annotation is for callers.
+    uri = GeoURI(
+        cast(float, lat),
+        cast(float, lon),
+        cast("float | None", alt),
+        cast("float | None", u),
+        DEFAULT_CRS if crs is None else crs,
+        {} if params is None else params,
+    )
+    return str(uri)

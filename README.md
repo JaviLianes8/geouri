@@ -14,12 +14,12 @@ pip install geouri
 from geouri import parse, build
 
 location = parse("geo:48.2010,16.3695,183;crs=wgs84;u=23.5")
-location.lat          # 48.201
-location.lon          # 16.3695
-location.alt          # 183.0
+location.lat  # 48.201
+location.lon  # 16.3695
+location.alt  # 183.0
 location.uncertainty  # 23.5
-location.crs          # "wgs84"
-location.params       # {}
+location.crs  # "wgs84"
+location.params  # {}
 
 build(48.2010, 16.3695, alt=183, u=23.5)
 # "geo:48.201,16.3695,183;u=23.5"

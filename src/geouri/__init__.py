@@ -2,10 +2,23 @@
 
 from __future__ import annotations
 
+from ._android import AndroidGeo, build_android, build_android_query, parse_android
 from ._build import build
-from ._model import GeoURI, GeoURIError
+from ._errors import GeoURIError, Reason
+from ._model import GeoURI, compare
 from ._parse import parse
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-__all__ = ["GeoURI", "GeoURIError", "build", "parse"]
+__all__ = [
+    "AndroidGeo",
+    "GeoURI",
+    "GeoURIError",
+    "Reason",
+    "build",
+    "build_android",
+    "build_android_query",
+    "compare",
+    "parse",
+    "parse_android",
+]

@@ -2,13 +2,13 @@
 
 Progress:
 - [x] Brainstorm ranked improvements (this file)
-- [ ] Pin the ground truth: RFC 5870 examples and errata, Android map intent examples
-- [ ] Error reasons: `GeoURIError.reason` from a closed set, picklable
-- [ ] Strict RFC 5870 parser: grammar, WGS-84 digit limits, parameter order and duplicates
-- [ ] Exact numbers: ranges and comparison on the decimal text, not on rounded floats
-- [ ] Comparison per section 3.4.4: poles, date line, crs default, unknown parameters
-- [ ] Safe builder: shortest exact numbers, encoded parameters, refused labels
-- [ ] Android dialect: `parse_android`, `build_android`, `build_android_query`
+- [x] Pin the ground truth: RFC 5870 examples and errata, Android map intent examples
+- [x] Error reasons: `GeoURIError.reason` from a closed set, picklable
+- [x] Strict RFC 5870 parser: grammar, WGS-84 digit limits, parameter order and duplicates
+- [x] Exact numbers: ranges and comparison on the decimal text, not on rounded floats
+- [x] Comparison per section 3.4.4: poles, date line, crs default, unknown parameters
+- [x] Safe builder: shortest exact numbers, encoded parameters, refused labels
+- [x] Android dialect: `parse_android`, `build_android`, `build_android_query`
 - [ ] Command line: canonical form or JSON per URI, Android mode
 - [ ] Contracts: RFC examples, README examples, typing, installed wheel
 - [ ] Docs and packaging: README, CHANGELOG, metadata, sdist contents

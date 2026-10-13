@@ -1,0 +1,41 @@
+{
+ "sources": {
+  "rfc5870": {
+   "url": "https://www.rfc-editor.org/rfc/rfc5870.txt",
+   "sha256": "a3bf93084c422508bbf64976e9adee1eae88d688a2e7f7fc3a531aa44ceb3bb1"
+  },
+  "android": {
+   "url": "https://developer.android.com/guide/components/intents-common",
+   "section": "Maps"
+  }
+ },
+ "note": "Extracted by script from the sources above, fetched 2026-10-13. Nothing typed by hand.",
+ "rfc5870_uris": [
+  "geo:13.4125,103.8667",
+  "geo:48.2010,16.3695,183",
+  "geo:48.198634,16.371648;crs=wgs84;u=40",
+  "geo:90,-22.43;crs=WGS84",
+  "geo:90,46",
+  "geo:22.300;-118.44",
+  "geo:22.3;-118.4400",
+  "geo:66,30;u=6.500;FOo=this%2dthat",
+  "geo:66.0,30;u=6.5;foo=this-that",
+  "geo:70,20;foo=1.00;bar=white",
+  "geo:70,20;foo=1;bar=white",
+  "geo:47,11;foo=blue;bar=white",
+  "geo:47,11;bar=white;foo=blue",
+  "geo:22,0;bar=Blue",
+  "geo:22,0;BAR=blue",
+  "geo:94,0"
+ ],
+ "android_examples": [
+  "geo:47.6,-122.3",
+  "geo:47.6,-122.3?z=11",
+  "geo:0,0?q=34.99,-106.61(Treasure)",
+  "geo:0,0?q=1600+Amphitheatre+Parkway%2C+CA"
+ ],
+ "android_encoded_text": [
+  "1st & Pike, Seattle",
+  "1st%20%26%20Pike%2C%20Seattle"
+ ]
+}
