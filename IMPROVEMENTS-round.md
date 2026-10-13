@@ -13,7 +13,7 @@ Progress:
 - [x] Contracts: RFC examples, README examples, typing, installed wheel
 - [x] Docs and packaging: README, CHANGELOG, metadata, sdist contents
 - [x] Gates: ruff format, ruff check, mypy --strict, pytest
-- [ ] Mutation run: removing guarded logic makes the suite fail
+- [x] Mutation run: removing guarded logic makes the suite fail
 - [x] Independent review findings fixed with regression tests
 - [ ] Pull request opened, guard clean
 
@@ -92,3 +92,16 @@ sources below:
 
 Deferred: GML mapping from section 7 (non-normative, would pull XML into a small parser);
 other CRS labels (none registered).
+
+## Results
+
+- Gates: `ruff format --check .`, `ruff check .`, `mypy --strict src tests` and `pytest`
+  (253 tests with the wheel end to end and the fetched RFC text) exit 0.
+- Mutation run: 57 hand-written mutants on the first pass, 7 survived. Three guarded code
+  that could not be reached (removed), three exposed missing tests (added: non-ASCII digits
+  in altitude and other CRS, `u=-0`, an empty pin label), one was equivalent (lower-casing a
+  label the model lower-cases anyway). After the review fixes, every mutant of the changed
+  code was killed and the suite was green before and after each run.
+- Review: exactness beyond the decimal context, near-pole latitudes, pickling, the date
+  line in canonical output, Android search round trips, exact JSON numbers and type errors
+  were fixed with regression tests in `tests/test_review.py`.
