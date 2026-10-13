@@ -1,74 +1,66 @@
-"""Parse geo: URIs (RFC 5870) into a GeoURI."""
+"""Parse geo: URIs strictly against the RFC 5870 grammar."""
 
 from __future__ import annotations
 
-import re
-from urllib.parse import unquote
+from decimal import Decimal
 
-from ._model import GeoURI, GeoURIError
-from ._validate import validate
-
-_SIGNED = re.compile(r"-?\d+(?:\.\d+)?")
-_UNSIGNED = re.compile(r"\d+(?:\.\d+)?")
+from ._errors import GeoURIError
+from ._grammar import NUM, PNUM, WGS84_LAT, WGS84_LON, decode_value, label, number
+from ._model import DEFAULT_CRS, GeoURI, new_geouri
 
 
 def parse(uri: str) -> GeoURI:
-    """Parse a geo: URI into a GeoURI, validating coordinate ranges."""
+    """Parse a geo: URI, checking the RFC 5870 grammar, parameter rules and ranges."""
+    if not isinstance(uri, str):
+        raise TypeError(f"uri must be a str, not {type(uri).__name__}")
     if uri[:4].lower() != "geo:":
-        raise GeoURIError(f"not a geo: URI: {uri!r}")
+        raise GeoURIError("scheme", f"not a geo: URI: {uri!r}")
     body = uri[4:]
-    if not body:
-        raise GeoURIError("geo: URI has no coordinates")
-    coords, _, rest = body.partition(";")
-    lat, lon, alt = _parse_coords(coords)
-    uncertainty, crs, params = _parse_params(rest)
-    validate(lat, lon, uncertainty)
-    return GeoURI(lat=lat, lon=lon, alt=alt, uncertainty=uncertainty, crs=crs, params=params)
-
-
-def _parse_coords(text: str) -> tuple[float, float, float | None]:
-    parts = text.split(",")
+    if "#" in body:
+        raise GeoURIError("fragment", "a geo: URI has no fragment")
+    if "?" in body:
+        raise GeoURIError("query", "a geo: URI has no query; parse_android reads that form")
+    coords, sep, rest = body.partition(";")
+    parts = coords.split(",")
     if len(parts) not in (2, 3):
-        raise GeoURIError(f"expected 'lat,lon' or 'lat,lon,alt': {text!r}")
-    lat = _number(parts[0], "latitude")
-    lon = _number(parts[1], "longitude")
-    alt = _number(parts[2], "altitude") if len(parts) == 3 else None
+        raise GeoURIError("coordinates", f"expected 'lat,lon' or 'lat,lon,alt': {coords!r}")
+    crs, uncertainty, params = _parse_params(rest.split(";") if sep else [])
+    exact = _parse_coords(parts, crs)
+    return new_geouri((*exact, uncertainty), crs, params)
+
+
+def _parse_coords(parts: list[str], crs: str) -> tuple[Decimal, Decimal, Decimal | None]:
+    # The WGS-84 digit limits depend on crs, so the parameters are read first.
+    wgs84 = crs == DEFAULT_CRS
+    lat = number(parts[0], WGS84_LAT if wgs84 else NUM, "number", "latitude")
+    lon = number(parts[1], WGS84_LON if wgs84 else NUM, "number", "longitude")
+    alt = number(parts[2], NUM, "number", "altitude") if len(parts) == 3 else None
     return lat, lon, alt
 
 
-def _parse_params(rest: str) -> tuple[float | None, str, dict[str, str | None]]:
-    uncertainty: float | None = None
-    crs = "wgs84"
+def _parse_params(
+    segments: list[str],
+) -> tuple[str, Decimal | None, dict[str, str | None]]:
+    crs = DEFAULT_CRS
+    uncertainty: Decimal | None = None
     params: dict[str, str | None] = {}
-    if not rest:
-        return uncertainty, crs, params
-    for segment in rest.split(";"):
-        if not segment:
-            raise GeoURIError("empty parameter in geo: URI")
-        name, sep, value = segment.partition("=")
-        key = name.lower()
-        if key == "u":
-            uncertainty = _unsigned(_require_value(sep, value, "u"), "uncertainty")
-        elif key == "crs":
-            crs = _require_value(sep, value, "crs").lower()
+    seen: set[str] = set()
+    for index, segment in enumerate(segments):
+        raw_name, sep, value = segment.partition("=")
+        name = label(raw_name, "param-name", "parameter name")
+        if name in seen:
+            raise GeoURIError("duplicate-param", f"parameter {name!r} appears twice")
+        seen.add(name)
+        # Section 3.3: crs comes first, then u, then any other parameter.
+        if name == "crs":
+            if index != 0:
+                raise GeoURIError("param-order", "crs must be the first parameter")
+            # A missing "=value" reads as an empty value, which the label rule refuses.
+            crs = label(value, "crs", "crs label")
+        elif name == "u":
+            if index != (1 if "crs" in seen else 0):
+                raise GeoURIError("param-order", "u must follow crs and precede other parameters")
+            uncertainty = number(value, PNUM, "uncertainty", "uncertainty")
         else:
-            params[key] = unquote(value) if sep else None
-    return uncertainty, crs, params
-
-
-def _require_value(sep: str, value: str, name: str) -> str:
-    if not sep or not value:
-        raise GeoURIError(f"{name} parameter needs a value")
-    return value
-
-
-def _number(text: str, label: str) -> float:
-    if not _SIGNED.fullmatch(text):
-        raise GeoURIError(f"invalid {label}: {text!r}")
-    return float(text)
-
-
-def _unsigned(text: str, label: str) -> float:
-    if not _UNSIGNED.fullmatch(text):
-        raise GeoURIError(f"invalid {label}: {text!r}")
-    return float(text)
+            params[name] = decode_value(value) if sep else None
+    return crs, uncertainty, params

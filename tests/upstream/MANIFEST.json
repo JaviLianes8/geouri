@@ -1,0 +1,11 @@
+{
+  "rfc5870.txt": {
+    "title": "RFC 5870, A Uniform Resource Identifier for Geographic Locations ('geo' URI)",
+    "url": "https://www.rfc-editor.org/rfc/rfc5870.txt",
+    "revision": "published June 2010",
+    "fetched": "2026-10-13",
+    "size": 45943,
+    "sha256": "a3bf93084c422508bbf64976e9adee1eae88d688a2e7f7fc3a531aa44ceb3bb1",
+    "licence": "IETF Trust Legal Provisions (BCP 78)"
+  }
+}

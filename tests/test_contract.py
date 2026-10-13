@@ -4,7 +4,18 @@ import geouri
 
 # The public API. Add every exported name here as the library grows; this list is the
 # contract and the test below fails if the module and this list disagree.
-PUBLIC_API: list[str] = ["GeoURI", "GeoURIError", "build", "parse"]
+PUBLIC_API: list[str] = [
+    "AndroidGeo",
+    "GeoURI",
+    "GeoURIError",
+    "Reason",
+    "build",
+    "build_android",
+    "build_android_query",
+    "compare",
+    "parse",
+    "parse_android",
+]
 
 
 def test_all_lists_exactly_the_public_api() -> None:
