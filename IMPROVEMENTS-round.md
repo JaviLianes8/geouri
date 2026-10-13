@@ -9,9 +9,9 @@ Progress:
 - [x] Comparison per section 3.4.4: poles, date line, crs default, unknown parameters
 - [x] Safe builder: shortest exact numbers, encoded parameters, refused labels
 - [x] Android dialect: `parse_android`, `build_android`, `build_android_query`
-- [ ] Command line: canonical form or JSON per URI, Android mode
+- [x] Command line: canonical form or JSON per URI, Android mode
 - [ ] Contracts: RFC examples, README examples, typing, installed wheel
-- [ ] Docs and packaging: README, CHANGELOG, metadata, sdist contents
+- [x] Docs and packaging: README, CHANGELOG, metadata, sdist contents
 - [ ] Gates: ruff format, ruff check, mypy --strict, pytest
 - [ ] Mutation run: removing guarded logic makes the suite fail
 - [ ] Independent review findings fixed with regression tests

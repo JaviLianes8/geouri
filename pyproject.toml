@@ -1,21 +1,30 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
 name = "geouri"
-version = "0.1.0"
-description = "Typed, zero-dependency parser and builder for geo: URIs (RFC 5870)."
+version = "0.2.0"
+description = "Strict, typed, zero-dependency parser, builder and comparator for geo: URIs (RFC 5870), with the Android map intent form"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Javier Lianes", email = "javier@lianes8studio.com" }]
-keywords = []
+keywords = ["geo", "uri", "rfc5870", "geolocation", "coordinates", "wgs84", "latitude", "longitude", "android", "intent", "maps", "parser"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
 ]
 dependencies = []
@@ -30,6 +39,23 @@ Issues = "https://github.com/JaviLianes8/geouri/issues"
 Changelog = "https://github.com/JaviLianes8/geouri/blob/main/CHANGELOG.md"
 LinkedIn = "https://www.linkedin.com/in/jlianes/"
 Funding = "https://buymeacoffee.com/jlianesglrs"
+
+[project.scripts]
+geouri = "geouri._cli:main"
+
+[tool.hatch.build.targets.sdist]
+# Third-party reference files are fetched locally and never shipped; only their manifest is.
+include = [
+    "src/geouri",
+    "tests/*.py",
+    "tests/data/examples.json",
+    "tests/upstream/MANIFEST.json",
+    "scripts/fetch_upstream.py",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/geouri"]
