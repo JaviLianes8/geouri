@@ -13,6 +13,7 @@ Progress:
 - [x] Mutation round: twenty deliberate faults, all caught
 - [x] Final four gates and pull request #3
 - [x] QA round 1 corrections and contract verification
+- [x] QA round 2 corrections and stdin contract verification
 - [ ] Independent reviewer (item 16)
 - [ ] Five independent QA lenses (item 19)
 - [ ] Merge and publish (item 17)
@@ -236,6 +237,50 @@ Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r1
 `red-corrected.txt`, `full.xml`, and `mutation-E-01` through `mutation-E-04`
 containing the replay outputs and JUnit results. All runtime changes and the
 documentation restriction are recorded in CHANGELOG.
+
+### Round 2 corrections, 2026-11-01
+
+Reviewed base: `db00ec81ece31b2bd0cc0eeabebaf71af9caa846`.
+Fix commit: `acf7da7522d18255b7a6db5899850ed1f312146d`
+(`preserve stdin decoder state and universal newlines`).
+
+All four supplied findings are addressed. B-03, C-004 and D-002 describe the
+same stdin framing regression; E-05 identifies a missing encoding contract.
+Independent lens re-verification and item 16 review remain pending. No new
+lens verdict, merge or publication is claimed by this correction run.
+
+| Finding | Change and verification |
+| --- | --- |
+| B-03 | Decode the entire batch with one incremental text reader before splitting records. Contracts cover CR, LF and CRLF, UTF-16 LE/BE and BOM, UTF-32 LE and BOM, empty lines and an unterminated final record. |
+| C-004 | Retain bounded per-record encoding diagnostics and valid neighboring records. Nine cases combine malformed UTF-8/UTF-16/UTF-32 with all three newline forms; existing malformed UTF-8 contracts also pass. Additional checks cover incomplete final code units, valid replacement characters and a UTF-7 shift spanning newlines. |
+| D-002 | Installed wheel and sdist consumers exercise both module and console entry points with CR/LF/CRLF batches in UTF-8, UTF-16 LE/BOM, UTF-32 LE and cp1252. Every record, decoded query, status and empty stderr are asserted. |
+| E-05 | A subprocess supplies non-ASCII cp1252 stdin with valid neighboring records and asserts all decoded queries, successful status and empty stderr. It kills the exact N15 mutation on the reviewed source and the equivalent mutation in the revised reader. |
+
+Before the runtime correction, the expanded encoding contract file reported
+**21 failed, 20 passed**. These failures reproduce the shared behavior bug and
+its malformed-record variants. The cp1252 contract passed on the original source,
+as expected for a coverage finding. After the fix, both CLI test files reported
+**51 passed**. Four additional finalization and stateful-decoding cases were then
+included in the complete suite. The public API is unchanged; GUIDE describes
+incremental decoding and universal newlines, and CHANGELOG records the behavior
+restoration and added contracts.
+
+| Mutation replay | Result | Catching contract |
+| --- | --- | --- |
+| N15: replace `stream.encoding` with UTF-8 in the original reader | Killed by an assertion failure | `test_stdin_uses_the_configured_cp1252_codec` |
+| N15 equivalent: force UTF-8 in the revised text reader | Killed by an assertion failure | `test_stdin_uses_the_configured_cp1252_codec` |
+
+Each required gate exited 0: `ruff format --check .`, `ruff check .`,
+`mypy --strict src`, and pytest. Strict typing also passed for `src tests`.
+The full suite reported **347 passed, no skips** in 74.00 seconds on CPython
+3.14.6 with manifest-checked upstream references, `GEOURI_E2E=1` and
+`GEOURI_E2E_PYPI=1`. It built and installed the wheel and sdist and exercised an
+actual PyPI 0.2.0 upgrade. Every pytest run used a 300-second per-test timeout
+and a scratch basetemp. No interpreter matrix was repeated this round.
+
+Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r2/`:
+`red.txt`, `red.xml`, `green.xml`, `full.txt`, `full.xml`, and `N15-original/`
+and `N15-fixed/`, each containing mutation output and JUnit results.
 
 ### Disputed findings
 
