@@ -9,12 +9,36 @@ Progress:
 - [x] RFC and Android reference sources fetched again
 - [x] Contracts, seeded properties, README, GUIDE and dated CHANGELOG
 - [x] Wheel, sdist, installed consumer and PyPI upgrade
-- [ ] Available interpreter matrix
+- [x] Available interpreter matrix: twelve builds
 - [x] Mutation round: twenty deliberate faults, all caught
-- [ ] Final four gates and pull request
+- [x] Final four gates and pull request #3
 - [ ] Independent reviewer (item 16)
 - [ ] Five independent QA lenses (item 19)
 - [ ] Merge and publish (item 17)
+
+## Scorecard
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| 1 | PASS | Existing public names and defaults retained; changes listed in CHANGELOG |
+| 2 | PASS | Exact `__all__`, no incidental public imports, examples use public imports |
+| 3 | PASS | All ten names have runnable docstrings; README and GUIDE examples executed |
+| 4 | PASS | `mypy --strict src tests`; `py.typed` in wheel; consumer type inference tests |
+| 5 | PASS | Typed reasons, TypeError for misuse, input-free generated diagnostics |
+| 6 | PASS | Every public name covered by success, edge and failure contracts |
+| 7 | PASS | Fresh RFC, erratum and Android source checks; Fraction and urllib oracles |
+| 8 | PASS | Wheel consumers and CLI, actual PyPI 0.2.0 upgrade, old pickles |
+| 9 | PASS | Seeded properties and measured scaling; numeric budgets checked |
+| 10 | PASS | Twelve available interpreter builds; installed wheel with source excluded |
+| 11 | PASS | Absolute links, scoped comparison, exact badge, strict twine check |
+| 12 | PASS | Dated 1.0.0 section: 2026-11-01 |
+| 13 | PASS | 1.0.0, Production/Stable, Python 3.10+, MIT, URLs, no runtime dependencies |
+| 14 | PASS | Wheel and sdist inspected; LICENSE and typing marker present |
+| 15 | PASS | Each gate exits zero; full pytest run: 285 passed, no skips |
+| 16 | pending | Independent reviewer |
+| 17 | pending | PR #3 open; merge and publication not performed |
+| 18 | PASS | Twenty deliberate faults, twenty caught; table below |
+| 19 | pending | Five independent QA lenses |
 
 ## Baseline and API review
 
@@ -58,12 +82,23 @@ coordinate and parameter round trips, 2,000 Android searches checked against
 `urllib.parse.quote`, large parameter/query inputs and all public docstrings.
 External-source tests skip cleanly when their fetched files are absent.
 
+Measured scaling on 2026-11-01 used five samples at 10,000, 40,000 and 160,000
+input units. Fourfold increases took 3.36 to 5.32 times as long for parameter
+values, parameter counts, Android queries, near-pin queries and malformed escapes.
+Oversized numeric tokens were bounded; no measured ratio exceeded 6.91.
+Formatting 2,000/4,000/8,000 trailing zeros 100 times took 0.108/0.222/0.474 seconds.
+Rejecting an already-created million-digit integer 1,000 times took 0.033 seconds.
+
 ## Packaging and upgrade
 
 The built wheel and sdist pass `twine check --strict`. Archive inspection verifies
 MIT LICENSE, `py.typed`, metadata, README, GUIDE, CHANGELOG and the intended tests
 and fixtures in the sdist. The wheel contains only the package and distribution
 metadata. No caches, downloaded third-party text or process reports ship.
+
+Verified artifact SHA-256:
+- wheel: `99dc7c1f69cbe66a9694ee2a34490fa433e9210c9f9910ec5acb158aaeb227a9`
+- sdist: `dfc7ef5b1eef380cdc9b620e8f3f537e3157cd87e68310ed557a4c7c79f7ecd5`
 
 Three end-to-end tests passed: fresh wheel installation, an actual PyPI 0.2.0
 installation upgraded in place, and archive inspection. Consumers run from empty
@@ -75,33 +110,76 @@ against both installed versions.
 
 ## Mutation round (item 18)
 
-Twenty faults were applied individually in an isolated copy. The suite ran with
+Twenty faults were applied individually in an isolated copy of 7ead302.
+The final round repeated all twenty after the last runtime changes. The suite ran with
 `-x`, a 300-second per-test limit and bytecode disabled; each fault was restored
-before the next run. All twenty produced assertion failures, with no survivors.
+before the next run. All twenty produced test failures, with no survivors.
 Build tests were disabled in this round; the contract suite caught every fault.
 
 | Id | Deliberate mutation | File | Result | Catching test |
 | --- | --- | --- | --- | --- |
-| M01 | scheme case | `_parse.py` | killed | `tests/test_certification.py::test_public_docstrings_and_guide_examples_run` |
-| M02 | latitude upper boundary | `_validation.py` | killed | `tests/test_build.py::test_pole_longitude_is_written_as_zero` |
-| M03 | longitude upper boundary | `_validation.py` | killed | `tests/test_certification.py::test_public_docstrings_and_guide_examples_run` |
-| M04 | negative uncertainty | `_validation.py` | killed | `tests/test_android.py::test_rfc_parameters_and_unknown_fields_are_kept` |
-| M05 | pole equivalence | `_model.py` | killed | `tests/test_build.py::test_pole_longitude_is_written_as_zero` |
-| M06 | date line equivalence | `_model.py` | killed | `tests/test_docs.py::test_every_readme_example_runs_and_prints_its_comment` |
-| M07 | unknown values comparison | `_model.py` | killed | `tests/test_certification.py::test_public_docstrings_and_guide_examples_run` |
-| M08 | parameter order | `_parse.py` | killed | `tests/test_docs.py::test_every_readme_example_runs_and_prints_its_comment` |
-| M09 | duplicate parameters | `_parse.py` | killed | `tests/test_certification.py::test_generated_diagnostics_omit_input` |
-| M10 | latitude digit width | `_grammar.py` | killed | `tests/test_parse.py::test_rejects_with_the_reason` |
-| M11 | number budget | `_grammar.py` | killed | `tests/test_certification.py::test_numeric_budgets_reject_before_expansion` |
-| M12 | wrong error type | `_parse.py` | killed | `tests/test_parse.py::test_rejects_a_non_string` |
-| M13 | swapped build arguments | `_build.py` | killed | `tests/test_android.py::test_builders_write_the_guide_examples` |
-| M14 | Android upper zoom | `_android.py` | killed | `tests/test_android.py::test_rfc_parameters_and_unknown_fields_are_kept` |
-| M15 | Android plus decoding | `_android.py` | killed | `tests/test_android.py::test_address_search_decodes_plus_and_escapes` |
-| M16 | CLI success status | `_cli.py` | killed | `tests/test_cli.py::test_prints_the_canonical_form_of_each_argument` |
-| M17 | CLI privacy | `_cli.py` | killed | `tests/test_certification.py::test_cli_diagnostics_never_echo_inputs_or_unknown_options` |
-| M18 | empty parameter value | `_validation.py` | killed | `tests/test_build.py::test_refuses_with_the_reason` |
-| M19 | exact number formatting | `_grammar.py` | killed | `tests/test_android.py::test_builders_write_the_guide_examples` |
-| M20 | type comparison check | `_model.py` | killed | `tests/test_certification.py::test_compare_refuses_wrong_types` |
+| M01 | Require lowercase scheme | `_parse.py` | killed | `tests/test_certification.py::test_public_docstrings_and_guide_examples_run` |
+| M02 | Reject latitude 90 | `_validation.py` | killed | `tests/test_build.py::test_pole_longitude_is_written_as_zero` |
+| M03 | Reject longitude 180 | `_validation.py` | killed | `tests/test_certification.py::test_public_docstrings_and_guide_examples_run` |
+| M04 | Reject positive instead of negative uncertainty | `_validation.py` | killed | `tests/test_android.py::test_rfc_parameters_and_unknown_fields_are_kept` |
+| M05 | Use latitude 91 for the pole rule | `_model.py` | killed | `tests/test_build.py::test_pole_longitude_is_written_as_zero` |
+| M06 | Use -181 for the date-line rule | `_model.py` | killed | `tests/test_docs.py::test_every_readme_example_runs_and_prints_its_comment` |
+| M07 | Return False instead of undefined | `_model.py` | killed | `tests/test_certification.py::test_public_docstrings_and_guide_examples_run` |
+| M08 | Accept misplaced CRS | `_parse.py` | killed | `tests/test_docs.py::test_every_readme_example_runs_and_prints_its_comment` |
+| M09 | Accept duplicate parameter names | `_parse.py` | killed | `tests/test_certification.py::test_generated_diagnostics_omit_input` |
+| M10 | Allow three latitude integer digits | `_grammar.py` | killed | `tests/test_parse.py::test_rejects_with_the_reason` |
+| M11 | Raise numeric budget to 100,000 | `_grammar.py` | killed | `tests/test_certification.py::test_numeric_budgets_reject_before_expansion` |
+| M12 | Raise ValueError for non-string URI | `_parse.py` | killed | `tests/test_parse.py::test_rejects_a_non_string` |
+| M13 | Swap latitude and longitude in build | `_build.py` | killed | `tests/test_android.py::test_builders_write_the_guide_examples` |
+| M14 | Limit zoom to 22 instead of 23 | `_android.py` | killed | `tests/test_android.py::test_rfc_parameters_and_unknown_fields_are_kept` |
+| M15 | Keep plus instead of decoding space | `_android.py` | killed | `tests/test_android.py::test_address_search_decodes_plus_and_escapes` |
+| M16 | Start valid CLI batches with status 1 | `_cli.py` | killed | `tests/test_cli.py::test_prints_the_canonical_form_of_each_argument` |
+| M17 | Echo rejected URI in diagnostics | `_cli.py` | killed | `tests/test_certification.py::test_cli_diagnostics_never_echo_inputs_or_unknown_options` |
+| M18 | Accept empty parameter values | `_validation.py` | killed | `tests/test_build.py::test_refuses_with_the_reason` |
+| M19 | Strip trailing ones as well as zeros | `_grammar.py` | killed | `tests/test_android.py::test_builders_write_the_guide_examples` |
+| M20 | Raise ValueError for compare misuse | `_model.py` | killed | `tests/test_certification.py::test_compare_refuses_wrong_types` |
+
+## Available Python matrix
+
+Final wheel from 7ead302, each installed into an isolated environment. Tests come
+from the sdist with its source package excluded, so imports resolve to the wheel.
+Embedded runtimes were copied into scratch and supplied with isolated dependencies;
+original installations were not modified. All three skips are the opt-in build
+and upgrade tests, exercised separately in the full run above.
+
+| Python | Installed-wheel suite |
+| --- | --- |
+| 3.10.11 | 282 passed, 3 skipped |
+| 3.10.22 | 282 passed, 3 skipped |
+| 3.11.9 | 282 passed, 3 skipped |
+| 3.11.11 | 282 passed, 3 skipped |
+| 3.11.18 | 282 passed, 3 skipped |
+| 3.12.10 | 282 passed, 3 skipped |
+| 3.12.16 | 282 passed, 3 skipped |
+| 3.13.2 | 282 passed, 3 skipped |
+| 3.13.18 | 282 passed, 3 skipped |
+| 3.14.6 | 282 passed, 3 skipped |
+| 3.14.10t | 282 passed, 3 skipped |
+| 3.14.10 | 282 passed, 3 skipped |
+
+Every available minor version from the declared minimum through 3.14 was tested,
+including free-threaded 3.14.10. Python 3.13 free-threaded is not installed.
+The launcher's stale entries for 3.10.19, 3.11.5/14/17, 3.12.12/15, 3.13.16,
+3.14.2/8 and their 3.14 free-threaded builds point to absent executables and could
+not run; available replacements are listed above.
+
+## Final gates and pull request
+
+At 7ead302, each command exited zero independently: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, and `pytest`. Strict typing also passed with
+`mypy --strict src tests`. With fetched sources, `GEOURI_E2E=1` and
+`GEOURI_E2E_PYPI=1`, pytest reported **285 passed, no skips** in 62.43 seconds.
+The per-test timeout is 300 seconds. All temporary build and test paths were in
+the dedicated scratch directory.
+
+[PR #3](https://github.com/JaviLianes8/geouri/pull/3) targets main from
+`release/1.0.0`. The required repository and PR guard returned CLEAN.
+Preparation is complete; merge and publication remain pending.
 
 ## Independent review and QA
 
