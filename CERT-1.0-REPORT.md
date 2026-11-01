@@ -12,6 +12,7 @@ Progress:
 - [x] Available interpreter matrix: twelve builds
 - [x] Mutation round: twenty deliberate faults, all caught
 - [x] Final four gates and pull request #3
+- [x] QA round 1 corrections and contract verification
 - [ ] Independent reviewer (item 16)
 - [ ] Five independent QA lenses (item 19)
 - [ ] Merge and publish (item 17)
@@ -183,5 +184,59 @@ Preparation is complete; merge and publication remain pending.
 
 ## Independent review and QA
 
-Items 16 and 19 have not been performed for this release. No lens verdict is
-claimed. Merge and publication remain pending.
+### Round 1 corrections, 2026-11-01
+
+Reviewed base: `33beeadec0e043685bc7961daad98bb693b79575`.
+Fix commit: `06f2eb0c40b6ea97c451d51f5101c703307ff513`
+(`fix comparison and encoding contracts for 1.0.0`).
+
+The supplied reports for lenses b, c, d and e returned FAIL. All ten reported
+findings are addressed below. Independent re-verification remains pending;
+this correction run does not replace the lens verdicts or item 16 review.
+No verdict for lens a is claimed here. Merge and publication remain pending.
+
+| Finding | Change and verification |
+| --- | --- |
+| B-01 | `compare` returns `None` for missing, disjoint or partially overlapping extension names when known fields match. Symmetry, boolean inequality and known-field differences are covered; README, GUIDE and docstring corrected. |
+| B-02 | Used the report's documentation option to preserve the mapping API. README, GUIDE and parser docstring explicitly restrict repeated extension names, including identical values and flags, and distinguish that restriction from RFC 5870. Four rejection contracts cover the supported subset. |
+| C-001 | Decode stdin bytes per line using the stream encoding; emit bounded `invalid (encoding)` and continue with status 1. Six subprocess cases cover malformed, truncated and long invalid UTF-8 lines between valid records, in both modes. |
+| C-002 | Reject unpaired surrogate query keys with `GeoURIError` reason `query`. Three parser contracts and a strict UTF-8 CLI output contract verify rejection and bounded diagnostics. |
+| C-003 | Store accepted parameter string subclasses as built-in strings through the base implementation. The contract checks exact content, serialization, equality and hash consistency despite a subclass display override. |
+| D-001 | Serialize JSON strings and keys with ASCII escapes while retaining exact Decimal numbers. Subprocess checks cover ASCII/cp1252, Unicode keys and values, both CLI entry points and both JSON modes after wheel and sdist installation. |
+| E-01 | Assert complete `GeoURIError.args` with default, nonempty and newline messages before and after pickling. |
+| E-02 | Assert non-default CRS, exact canonical text, equality and hash preservation through pickle, shallow copy and deep copy, using coordinates outside WGS-84 ranges. |
+| E-03 | Assert pin, label and query separately for newline, CRLF and newline-only label round trips, plus a directly parsed percent-encoded newline. |
+| E-04 | Document that empty lines are skipped while whitespace-only lines are rejected; subprocess contract checks spaces, tabs, status, diagnostics and continued valid output. |
+
+The new contracts ran against unchanged source before behavior fixes: **18 failed,
+13 passed**, with failures for all five behavior defects. After correction all
+**31 passed**. B-02 and E-01 through E-04 preserve current runtime behavior.
+Two prior comparison cases asserting `False` for differing unknown names were
+replaced by the stronger undefined-comparison contracts.
+
+The four previously surviving mutations were replayed individually in scratch
+copies. Each produced assertion failures, with no collection errors or timeouts:
+
+| Finding | Mutation | Catching contract |
+| --- | --- | --- |
+| E-01 | Drop message from exception constructor args | `test_error_args_preserve_the_complete_message_through_pickle` |
+| E-02 | Replace serialized CRS with default | `test_non_default_crs_survives_pickle_and_copies` |
+| E-03 | Remove DOTALL from pin matching | `test_android_newline_labels_remain_pins` |
+| E-04 | Skip whitespace-only stdin | `test_whitespace_only_stdin_is_rejected_while_empty_lines_are_skipped` |
+
+Each required gate exited 0: `ruff format --check .`, `ruff check .`,
+`mypy --strict src`, and pytest. Strict typing also passed for `src tests`.
+The complete suite reported **314 passed, no skips** in 90.62 seconds on
+CPython 3.14.6, with fetched upstream references, `GEOURI_E2E=1` and
+`GEOURI_E2E_PYPI=1`. This includes a fresh wheel, an sdist installation and an
+actual PyPI 0.2.0 upgrade. Every pytest run used a 300-second per-test timeout
+and a dedicated scratch basetemp. No interpreter matrix was repeated this round.
+
+Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r1/`:
+`red-corrected.txt`, `full.xml`, and `mutation-E-01` through `mutation-E-04`
+containing the replay outputs and JUnit results. All runtime changes and the
+documentation restriction are recorded in CHANGELOG.
+
+### Disputed findings
+
+None.
