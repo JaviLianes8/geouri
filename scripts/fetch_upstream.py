@@ -8,6 +8,7 @@ them; each download is checked against the size and sha256 in the manifest.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import sys
@@ -18,6 +19,10 @@ FOLDER = Path(__file__).resolve().parents[1] / "tests" / "upstream"
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, default=FOLDER)
+    output = parser.parse_args().output
+    output.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((FOLDER / "MANIFEST.json").read_text(encoding="utf-8"))
     failed = 0
     for name, entry in manifest.items():
@@ -28,7 +33,7 @@ def main() -> int:
             print(f"{name}: got {len(body)} bytes, sha256 {digest}; manifest differs")
             failed += 1
             continue
-        (FOLDER / name).write_bytes(body)
+        (output / name).write_bytes(body)
         print(f"{name}: ok")
     return 1 if failed else 0
 

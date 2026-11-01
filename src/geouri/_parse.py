@@ -10,11 +10,16 @@ from ._model import DEFAULT_CRS, GeoURI, new_geouri
 
 
 def parse(uri: str) -> GeoURI:
-    """Parse a geo: URI, checking the RFC 5870 grammar, parameter rules and ranges."""
+    """Parse an RFC 5870 URI; invalid text raises GeoURIError, wrong types TypeError.
+
+    >>> from geouri import parse
+    >>> str(parse('GEO:1.50,2;CRS=wgs84'))
+    'geo:1.5,2'
+    """
     if not isinstance(uri, str):
-        raise TypeError(f"uri must be a str, not {type(uri).__name__}")
+        raise TypeError("uri must be a str")
     if uri[:4].lower() != "geo:":
-        raise GeoURIError("scheme", f"not a geo: URI: {uri!r}")
+        raise GeoURIError("scheme", "expected the geo: scheme")
     body = uri[4:]
     if "#" in body:
         raise GeoURIError("fragment", "a geo: URI has no fragment")
@@ -23,7 +28,7 @@ def parse(uri: str) -> GeoURI:
     coords, sep, rest = body.partition(";")
     parts = coords.split(",")
     if len(parts) not in (2, 3):
-        raise GeoURIError("coordinates", f"expected 'lat,lon' or 'lat,lon,alt': {coords!r}")
+        raise GeoURIError("coordinates", "expected two or three coordinates")
     crs, uncertainty, params = _parse_params(rest.split(";") if sep else [])
     exact = _parse_coords(parts, crs)
     return new_geouri((*exact, uncertainty), crs, params)
@@ -49,7 +54,7 @@ def _parse_params(
         raw_name, sep, value = segment.partition("=")
         name = label(raw_name, "param-name", "parameter name")
         if name in seen:
-            raise GeoURIError("duplicate-param", f"parameter {name!r} appears twice")
+            raise GeoURIError("duplicate-param", "parameter appears twice")
         seen.add(name)
         # Section 3.3: crs comes first, then u, then any other parameter.
         if name == "crs":

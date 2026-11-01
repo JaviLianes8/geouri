@@ -3,9 +3,18 @@
     "title": "RFC 5870, A Uniform Resource Identifier for Geographic Locations ('geo' URI)",
     "url": "https://www.rfc-editor.org/rfc/rfc5870.txt",
     "revision": "published June 2010",
-    "fetched": "2026-10-13",
+    "fetched": "2026-11-01",
     "size": 45943,
     "sha256": "a3bf93084c422508bbf64976e9adee1eae88d688a2e7f7fc3a531aa44ceb3bb1",
     "licence": "IETF Trust Legal Provisions (BCP 78)"
+  },
+  "android.html": {
+    "title": "Android common intents, Maps",
+    "url": "https://developer.android.com/guide/components/intents-common?hl=en",
+    "revision": "page retrieved 2026-11-01",
+    "fetched": "2026-11-01",
+    "size": 659914,
+    "sha256": "d3476b6087e181bfcad0eb8818cfcc93eb502147712819259c576415e2ad99f3",
+    "licence": "CC BY 4.0 prose; Apache 2.0 code samples"
   }
 }

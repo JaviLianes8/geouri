@@ -81,7 +81,7 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     cli = _run(script, "geo:1.50,2;CRS=wgs84", "geo:1,2?z=3", cwd=work)
     assert cli.returncode == 1
     assert cli.stdout == "geo:1.5,2\n"
-    assert cli.stderr == "invalid (query): geo:1,2?z=3\n"
+    assert cli.stderr == "invalid (query)\n"
 
 
 def test_distributions_ship_no_third_party_text(tmp_path: Path) -> None:

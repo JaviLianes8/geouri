@@ -6,6 +6,36 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-01
+
+### Stable
+
+- The ten public names, parser grammar, exact comparison rules, canonical builders,
+  immutable models and command-line options from 0.2.0 are stable.
+- Python 3.10 and later, inline type information, and no runtime dependencies.
+
+### Changed
+
+- Library-generated error messages no longer include input values, including parameter
+  names. The CLI prints only `invalid (reason)` for rejected URIs and a fixed usage
+  diagnostic for invalid options. Caller-supplied `GeoURIError` messages are preserved.
+- `compare` raises `TypeError` for non-`GeoURI` arguments instead of `AttributeError`.
+- Numeric tokens longer than 10,000 characters are rejected with reason `number`.
+  Nonzero numeric values whose coefficient digit count plus absolute exponent exceeds
+  10,000 are also rejected, preventing unbounded Decimal exponent expansion.
+- Extremely large integer zooms raise `GeoURIError` with reason `zoom` instead of a
+  built-in integer-to-string conversion error.
+- The incidental `annotations` package attribute is removed; use only `__all__` names.
+
+### Fixed
+
+- Formatting numbers with many trailing zeros now takes linear time.
+
+### Added
+
+- Runnable public API docstrings, a usage guide, seeded property tests, input privacy
+  contracts, fresh specification checks, and installed-wheel upgrade coverage.
+
 ## [0.2.0]
 
 ### Added

@@ -24,6 +24,12 @@ def build(
     digits), the longitude is written as 0 at a pole, `crs` must be a label and is
     omitted when it is the default, and extra parameter values are percent-encoded.
     A parameter that maps to None is written as a flag without a value.
+
+    Invalid values raise GeoURIError; wrong argument types raise TypeError.
+
+    >>> from geouri import build
+    >>> build(90, 12, u=3, params={'flag': None})
+    'geo:90,0;u=3;flag'
     """
     # GeoURI reads int, float and Decimal exactly; the float annotation is for callers.
     uri = GeoURI(

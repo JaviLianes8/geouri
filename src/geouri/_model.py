@@ -6,13 +6,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
 from types import MappingProxyType
-from typing import Any, cast
+from typing import cast
 
-from ._errors import GeoURIError
 from ._grammar import encode_value, label, plain
+from ._validation import check_params, check_ranges, exact_number
 
 DEFAULT_CRS = "wgs84"
-_RESERVED = frozenset({"crs", "u"})
 
 
 @dataclass(frozen=True, eq=False)
@@ -23,7 +22,13 @@ class GeoURI:
     `hash` and `str` follow the text that was parsed rather than a rounded float.
     `str()` gives the canonical URI. Equality follows section 3.4.4; see `compare`.
     `dataclasses.replace` rebuilds from the float fields, so digits beyond float precision
-    are not carried over; build a new URI from `Decimal` values to keep them.
+    are not carried over; use build with Decimal values to keep them.
+
+    Invalid values raise GeoURIError; wrong argument types raise TypeError.
+
+    >>> from geouri import GeoURI
+    >>> str(GeoURI(1, 2, uncertainty=3))
+    'geo:1,2;u=3'
     """
 
     lat: float
@@ -38,25 +43,30 @@ class GeoURI:
 
     def __post_init__(self) -> None:
         exact = (
-            _exact(self.lat, "latitude"),
-            _exact(self.lon, "longitude"),
-            None if self.alt is None else _exact(self.alt, "altitude"),
-            None if self.uncertainty is None else _exact(self.uncertainty, "uncertainty"),
+            exact_number(self.lat, "latitude"),
+            exact_number(self.lon, "longitude"),
+            None if self.alt is None else exact_number(self.alt, "altitude"),
+            None if self.uncertainty is None else exact_number(self.uncertainty, "uncertainty"),
         )
         if not isinstance(self.crs, str):
-            raise TypeError(f"crs must be a str, not {type(self.crs).__name__}")
+            raise TypeError("crs must be a str")
         crs = label(self.crs, "crs", "crs label")
-        _check_ranges(exact, crs)
+        check_ranges(exact, crs)
         floats = [None if v is None else float(v) for v in exact]
         for name, value in zip(("lat", "lon", "alt", "uncertainty"), floats, strict=True):
             object.__setattr__(self, name, value)
         object.__setattr__(self, "crs", crs)
-        object.__setattr__(self, "params", MappingProxyType(_check_params(self.params)))
+        object.__setattr__(self, "params", MappingProxyType(check_params(self.params)))
         object.__setattr__(self, "_exact", exact)
 
     @property
     def is_wgs84(self) -> bool:
-        """Whether the coordinates are WGS-84 latitude, longitude and altitude."""
+        """Whether the coordinates are WGS-84 latitude, longitude and altitude.
+
+        >>> from geouri import GeoURI
+        >>> GeoURI(1, 2).is_wgs84
+        True
+        """
         return self.crs == DEFAULT_CRS
 
     def __str__(self) -> str:
@@ -83,11 +93,11 @@ class GeoURI:
     def __hash__(self) -> int:
         return hash((self._key(), frozenset(self.params.items())))
 
-    def __reduce__(self) -> tuple[Any, ...]:
+    def __reduce__(self) -> tuple[object, ...]:
         # The read-only params mapping cannot be pickled; rebuild from exact values.
         return (new_geouri, (self._exact, self.crs, dict(self.params)))
 
-    def _key(self) -> tuple[Any, ...]:
+    def _key(self) -> tuple[str, Decimal, Decimal | None, Decimal | None, Decimal | None]:
         lat, lon, alt, unc = self._exact
         lon_key: Decimal | None = lon
         # copy_abs never rounds, unlike abs() under the decimal context precision.
@@ -106,7 +116,14 @@ def compare(a: GeoURI, b: GeoURI) -> bool | None:
     the same unknown parameter names appear, but some decoded values differ, which an
     implementation that does not know those parameters cannot judge. URIs whose unknown
     parameter names differ are not equivalent (the first rule for unknown parameters).
+    Wrong argument types raise TypeError.
+
+    >>> from geouri import compare, parse
+    >>> compare(parse('geo:90,1'), parse('geo:90,2'))
+    True
     """
+    if not isinstance(a, GeoURI) or not isinstance(b, GeoURI):
+        raise TypeError("compare expects two GeoURI instances")
     if a._key() != b._key() or set(a.params) != set(b.params):
         return False
     return True if dict(a.params) == dict(b.params) else None
@@ -120,49 +137,3 @@ def new_geouri(
     """Build a GeoURI from exact decimals; the fields are typed float for callers."""
     lat, lon, alt, unc = (cast(float, value) for value in exact)
     return GeoURI(lat, lon, alt, unc, crs, params)
-
-
-def _exact(value: object, what: str) -> Decimal:
-    if isinstance(value, bool) or not isinstance(value, (int, float, Decimal)):
-        raise TypeError(f"{what} must be a number, not {type(value).__name__}")
-    # float.__repr__ gives the shortest text that reads back as the same float, also for
-    # float subclasses whose own repr adds a type name.
-    exact = Decimal(float.__repr__(value)) if isinstance(value, float) else Decimal(value)
-    if not exact.is_finite():
-        raise GeoURIError("number", f"{what} is not finite: {value!r}")
-    return exact
-
-
-def _check_ranges(exact: tuple[Decimal, Decimal, Decimal | None, Decimal | None], crs: str) -> None:
-    lat, lon, _, unc = exact
-    if unc is not None and unc < 0:
-        raise GeoURIError("uncertainty", f"uncertainty must be non-negative: {unc}")
-    if crs != DEFAULT_CRS:
-        return  # section 3.4.1: ranges of other reference systems are not defined
-    if not -90 <= lat <= 90:
-        raise GeoURIError("latitude-range", f"latitude out of range [-90, 90]: {lat}")
-    if not -180 <= lon <= 180:
-        raise GeoURIError("longitude-range", f"longitude out of range [-180, 180]: {lon}")
-
-
-def _check_params(params: Mapping[str, str | None]) -> dict[str, str | None]:
-    if not isinstance(params, Mapping):
-        raise TypeError(f"params must be a mapping, not {type(params).__name__}")
-    checked: dict[str, str | None] = {}
-    for raw, value in params.items():
-        if not isinstance(raw, str) or not (value is None or isinstance(value, str)):
-            raise TypeError(f"parameters map str to str or None, not {raw!r}: {value!r}")
-        name = label(raw, "param-name", "parameter name")
-        if name in _RESERVED:
-            raise GeoURIError("param-name", f"crs and u have their own fields: {raw!r}")
-        if name in checked:
-            raise GeoURIError("duplicate-param", f"parameter {name!r} appears twice")
-        if value == "":
-            raise GeoURIError("param-value", f"the value of {name!r} cannot be empty")
-        if value is not None:
-            try:
-                value.encode("utf-8")
-            except UnicodeEncodeError:
-                raise GeoURIError("param-value", f"not encodable: {value!r}") from None
-        checked[name] = value
-    return checked

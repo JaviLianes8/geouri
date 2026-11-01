@@ -1,8 +1,10 @@
 # geouri
 
+[![Lianes8 Certified](https://lianes8studio.com/certified/lianes8-certified-badge.svg)](https://lianes8studio.com/certified)
+
 Strict, typed, zero-dependency parser, builder and comparator for `geo:` URIs
 ([RFC 5870](https://www.rfc-editor.org/rfc/rfc5870)), plus the Android map intent form
-(`?z=` zoom, `?q=` search) that most map apps accept.
+(`?z=` zoom, `?q=` search) documented by Android.
 
 ## Install
 
@@ -57,8 +59,11 @@ print(reason("geo:1,2?z=11"))  # query
 print(reason("geo:1,2;x=a b"))  # param-value
 ```
 
+Library-generated errors and CLI diagnostics omit input values. Wrong argument types
+raise `TypeError`. Numeric inputs have resource limits documented in the GUIDE.
+
 Each `GeoURIError` (a `ValueError`) carries a `reason` from the closed set listed under
-[Reasons](#reasons).
+[Reasons](https://github.com/JaviLianes8/geouri#reasons).
 
 ### Build
 
@@ -128,7 +133,7 @@ text, and `build_android_query` refuses text that a map app would read as a pin.
 ```
 geouri "geo:48.2010,16.3695;CRS=WGS84;U=40" "geo:94,0"
 geo:48.201,16.3695;u=40
-invalid (latitude-range): geo:94,0
+invalid (latitude-range)
 ```
 
 Prints the canonical form of each URI, or reads one per line from standard input when none
@@ -169,23 +174,29 @@ prints JSON. JSON numbers are the exact decimals of the URI. The exit status is 
 
 ## Why
 
-RFC 5870 defines the `geo:` URI scheme, but Python has no package that follows it closely.
-`urllib.parse` does not model the coordinates or parameters, so callers split strings by
-hand, skip range checks, compare floats where the RFC compares decimals, and miss the poles
-and date line rules. This package does the whole job with no runtime dependencies, full
-type hints, and tests that pin every example printed in the RFC.
+Use this package when you need coordinate validation, exact decimal comparison and
+canonical `geo:` text in a small dependency-free library. Python's
+[`urllib.parse`](https://docs.python.org/3/library/urllib.parse.html) splits generic
+URLs and handles quoting; it does not validate geographic coordinates. It is enough
+when you only need generic URL components. geouri adds the RFC's pole, date line and
+parameter comparison rules. It does not geocode addresses, calculate distances or
+launch map applications.
+
+See the [GUIDE](https://github.com/JaviLianes8/geouri/blob/main/GUIDE.md) for limits,
+model construction and upgrade details, and the
+[CHANGELOG](https://github.com/JaviLianes8/geouri/blob/main/CHANGELOG.md) for releases.
 
 ## Development
 
 `scripts/check.ps1` runs the gate (format, lint, `mypy --strict`, tests).
-`python scripts/fetch_upstream.py` fetches the RFC text listed in
+`python scripts/fetch_upstream.py --output PATH` fetches the RFC text listed in
 `tests/upstream/MANIFEST.json`, so the test that checks the committed examples against it
-runs instead of skipping. `GEOURI_E2E=1` builds the wheel, installs it in a fresh virtual
+runs instead of skipping when `GEOURI_UPSTREAM=PATH` is set. `GEOURI_E2E=1` builds the wheel, installs it in a fresh virtual
 environment and drives it.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/JaviLianes8/geouri/blob/main/LICENSE).
 
 ## Links
 
