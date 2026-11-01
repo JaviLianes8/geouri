@@ -15,6 +15,7 @@ Progress:
 - [x] QA round 1 corrections and contract verification
 - [x] QA round 2 corrections and stdin contract verification
 - [x] QA round 3 corrections and decoder boundary contracts
+- [x] QA round 4 corrections and stdin mutation contracts
 - [ ] Independent reviewer (item 16)
 - [ ] Five independent QA lenses (item 19)
 - [ ] Merge and publish (item 17)
@@ -331,6 +332,51 @@ Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r3
 `red.txt`, `red.xml`, `green.xml`, `full-3.txt`, `full.xml`, `full-gates.json`,
 and `mutations.json`. The `R09/`, `R18/` and `E05/` directories contain the
 individual mutation output and JUnit results.
+
+### Round 4 corrections, 2026-11-01
+
+Reviewed base: `74ee527044f2180d36524715f28f1691fffc602c`.
+Fix commit: `strengthen stdin decoding and case preservation contracts` (this commit).
+
+E-08, E-09 and E-10 identify missing contracts, with no production defect in the
+reviewed implementation. Twelve new source cases pass on that implementation.
+The runtime and public API remain unchanged; CHANGELOG records the added coverage.
+Independent lens re-verification and item 16 review remain pending.
+
+| Finding | Change and verification |
+| --- | --- |
+| E-08 | UTF-16 and UTF-32 input without a BOM spans multiple decoder buffers (32 and 64 KiB). Six source cases cover canonical, JSON and Android output, requiring status 1, empty stdout and exactly one encoding diagnostic. Installed wheel and sdist consumers enforce the same termination contract. |
+| E-09 | Invalid UTF-8 bytes occur at the beginning, middle and end of query data after a valid URI prefix. Source and installed contracts require the exact encoding diagnostic, status 1 and both neighboring valid records in order. |
+| E-10 | UTF-8, cp1252 and UTF-16 stdin must preserve `Main Street`, `Town Hall` and `Blue` as query, label and parameter values, with successful status and empty stderr. Source and installed contracts assert exact case. |
+
+Installed checks exercise both module and console entry points from an empty
+working directory with the source path excluded. All inputs added this round
+are hand-written contract cases.
+
+The exact N06, N11 and N20 patches were replayed individually in scratch copies.
+Each caused assertion failures in the new source contracts and in both installed
+distribution tests, with no collection errors or timeouts. The live upgrade was
+disabled for mutation runs; it passed in the full unmodified run.
+
+| Mutation replay | Source result and catching contract | Installed result |
+| --- | --- | --- |
+| N06: resume an unrecoverable decoder | Six failures in `test_unrecoverable_large_batch_stops_after_one_diagnostic` | Wheel and sdist fail `_check_large_bom_error` |
+| N11: detect invalid bytes only at the record start | Three failures in `test_embedded_decode_error_keeps_encoding_diagnostic` | Wheel and sdist fail `_check_embedded_decode_error` |
+| N20: lowercase decoded records | Three failures in `test_stdin_preserves_query_case` | Wheel and sdist fail `_check_query_case` |
+
+All 34 tests in `test_stdin_contracts.py` passed on the unchanged implementation.
+Each required gate exited 0: `ruff format --check .`, `ruff check .`,
+`mypy --strict src`, and pytest. Strict typing also passed for `src tests`.
+The complete suite reported **381 passed, no skips** in 173.63 seconds on CPython
+3.14.6 with freshly fetched, manifest-checked upstream references, `GEOURI_E2E=1`
+and `GEOURI_E2E_PYPI=1`. This includes wheel and sdist installation, both CLI entry
+points and an actual PyPI 0.2.0 upgrade. Every pytest run used a 300-second
+per-test timeout and a scratch basetemp. No interpreter matrix was repeated.
+
+Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r4/`:
+`baseline.txt`, `baseline.xml`, `full-4.txt`, `full.xml`, `full-gates.json`,
+`mutations.json`, and the `N06`, `N11` and `N20` source/installed text and JUnit
+logs. The mutation source copies were restored after verification.
 
 ### Disputed findings
 

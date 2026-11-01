@@ -56,6 +56,8 @@ All notable changes to this project are documented here. The format follows
   non-ASCII cp1252 queries, multibyte line endings and malformed-record recovery.
 - Contracts for caller-owned stdin remaining open and reusable, and exact cp1252
   euro query decoding from source and installed distributions.
+- Source and installed-distribution contracts for one fatal decoding diagnostic
+  across multiple buffers, embedded invalid bytes and mixed-case stdin query data.
 - Explicit documentation of the existing restriction against repeated extension
   names, which RFC 5870 permits. The single-value parameter mapping remains stable.
 
