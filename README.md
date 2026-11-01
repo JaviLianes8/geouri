@@ -5,6 +5,8 @@
 Strict, typed, zero-dependency parser, builder and comparator for `geo:` URIs
 ([RFC 5870](https://www.rfc-editor.org/rfc/rfc5870)), plus the Android map intent form
 (`?z=` zoom, `?q=` search) documented by Android.
+The supported RFC subset requires UTF-8 values and unique parameter names;
+numeric resource limits are described in the GUIDE.
 
 ## Install
 
@@ -33,8 +35,11 @@ print(uri)  # geo:66,30,183;u=6.5;type=this-that;flag
 `parse` follows the grammar of section 3.3: ASCII digits only, at most two
 integer digits of latitude and three of longitude in WGS-84, `crs` first and `u` second,
 each at most once, parameter names made of letters, digits and `-`, values made of the
-allowed characters or valid percent-encoding. One deliberate tightening: decoded values
-must be UTF-8, since they are returned as `str`. Ranges are checked on the exact decimal
+allowed characters or valid percent-encoding. Two deliberate restrictions apply:
+decoded values must be UTF-8, since they are returned as `str`, and every parameter
+name must be unique after case folding. RFC 5870 permits repeated extension parameters;
+this library rejects them with `duplicate-param` because `params` stores one value per
+name. This includes repeated identical values and flags. Ranges are checked on the exact decimal
 text, so `geo:90.0000000000000000001,0` is refused even though it rounds to `90.0` as a
 float. Other CRS labels parse, but their coordinates are not range checked because RFC 5870
 only defines WGS-84.
@@ -102,8 +107,8 @@ print(compare(parse("geo:22,0;bar=Blue"), parse("geo:22,0;BAR=blue")))  # None
 as exact decimals, longitude ignored at the poles and 180 equal to -180 in WGS-84,
 parameter order ignored, names case-insensitive and values compared after
 percent-decoding. `compare` returns `None` where the RFC calls the result undefined: the
-same unknown parameters appear but some values differ, which only the parameter's own
-specification could settle. `==` treats that case as not equal.
+known fields match but unknown parameter names or decoded values differ, which only
+the parameter's own specification could settle. `==` treats that case as not equal.
 
 ### Android map intents
 
@@ -138,7 +143,10 @@ invalid (latitude-range)
 
 Prints the canonical form of each URI, or reads one per line from standard input when none
 are given. `--json` prints the fields as JSON, `--android` reads the Android form and
-prints JSON. JSON numbers are the exact decimals of the URI. The exit status is 1 if any URI is invalid and 2 for a usage error.
+prints JSON. JSON strings and keys use ASCII escapes; numbers retain the exact decimals
+of the URI. Empty stdin lines are skipped; whitespace-only lines are rejected.
+Undecodable stdin lines print `invalid (encoding)` and processing continues.
+The exit status is 1 if any input is invalid and 2 for a usage error.
 
 ## API
 

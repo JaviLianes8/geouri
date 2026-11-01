@@ -51,9 +51,13 @@ def main(
             args = _parser().parse_args(argv)
     except SystemExit as stop:
         return int(stop.code or 0)
-    uris: Iterable[str] = args.uris or _lines(stdin or sys.stdin)
+    uris: Iterable[str | None] = args.uris or _lines(stdin or sys.stdin)
     status = 0
     for uri in uris:
+        if uri is None:
+            err.write("invalid (encoding)\n")
+            status = 1
+            continue
         try:
             if args.android:
                 line = _json(_android(parse_android(uri)))
@@ -97,13 +101,21 @@ def _json(value: Any) -> str:
     if isinstance(value, Decimal):
         return plain(value)
     if isinstance(value, dict):
-        items = (f"{json.dumps(k, ensure_ascii=False)}: {_json(v)}" for k, v in value.items())
+        items = (f"{json.dumps(k)}: {_json(v)}" for k, v in value.items())
         return "{" + ", ".join(items) + "}"
-    return json.dumps(value, ensure_ascii=False)
+    return json.dumps(value)
 
 
-def _lines(stream: TextIO) -> Iterable[str]:
-    for line in stream:
+def _lines(stream: TextIO) -> Iterable[str | None]:
+    # Decode raw lines separately so text read-ahead cannot discard a valid batch.
+    lines: Iterable[bytes] | Iterable[str] = getattr(stream, "buffer", stream)
+    for line in lines:
+        if isinstance(line, bytes):
+            try:
+                line = line.decode(stream.encoding, errors="strict")
+            except UnicodeDecodeError:
+                yield None
+                continue
         text = line.rstrip("\r\n")
         if text:
             yield text

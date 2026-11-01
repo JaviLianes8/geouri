@@ -30,11 +30,25 @@ All notable changes to this project are documented here. The format follows
 ### Fixed
 
 - Formatting numbers with many trailing zeros now takes linear time.
+- `compare` returns `None` when known fields match but unknown parameter names
+  differ, including missing extensions, as well as when their decoded values differ.
+- Malformed stdin bytes produce a bounded `invalid (encoding)` CLI diagnostic per
+  line and status 1, while valid batch lines before and after them are processed.
+- Android query keys containing unpaired surrogates raise `GeoURIError` with reason
+  `query` instead of reaching output serialization.
+- Accepted `GeoURI` parameter string subclasses are stored as built-in strings,
+  preserving hashability and their string content independently of display hooks.
+- CLI JSON strings and keys use ASCII escapes so Unicode values work with ASCII
+  and Windows cp1252 output streams. Exact Decimal numbers are unchanged.
 
 ### Added
 
 - Runnable public API docstrings, a usage guide, seeded property tests, input privacy
   contracts, fresh specification checks, and installed-wheel upgrade coverage.
+- Contracts for complete error `args` through pickling, non-default CRS through
+  pickle and copy, Android newline pin labels, and whitespace-only stdin rejection.
+- Explicit documentation of the existing restriction against repeated extension
+  names, which RFC 5870 permits. The single-value parameter mapping remains stable.
 
 ## [0.2.0]
 
@@ -53,7 +67,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
-- `parse` follows the RFC 5870 grammar strictly: ASCII digits only, WGS-84 digit limits,
+- `parse` follows a restricted RFC 5870 grammar: ASCII digits only, WGS-84 digit limits,
   `crs` then `u` before other parameters and each at most once, no repeated names, label
   names, valid parameter values, no trailing `;`, and clear reasons for a query or fragment.
 - Ranges are checked on the exact decimal text and only for WGS-84.

@@ -1,4 +1,4 @@
-"""Parse geo: URIs strictly against the RFC 5870 grammar."""
+"""Parse the RFC 5870 subset with UTF-8 values and unique parameter names."""
 
 from __future__ import annotations
 
@@ -11,6 +11,9 @@ from ._model import DEFAULT_CRS, GeoURI, new_geouri
 
 def parse(uri: str) -> GeoURI:
     """Parse an RFC 5870 URI; invalid text raises GeoURIError, wrong types TypeError.
+
+    Values must be UTF-8 and parameter names unique, including extension names.
+    Numeric resource limits and these restrictions are described in the GUIDE.
 
     >>> from geouri import parse
     >>> str(parse('GEO:1.50,2;CRS=wgs84'))

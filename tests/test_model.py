@@ -141,8 +141,6 @@ def test_equal_per_section_3_4_4(left: str, right: str) -> None:
         ("geo:90,10;crs=x", "geo:90,-170;crs=x"),
         ("geo:1,2;crs=x", "geo:1,2"),
         ("geo:1,2;crs=x", "geo:1,2;crs=y"),
-        ("geo:1,2;a=1", "geo:1,2;b=1"),
-        ("geo:1,2;a", "geo:1,2"),
         ("geo:0.10000000000000000001,0", "geo:0.1,0"),
     ],
 )

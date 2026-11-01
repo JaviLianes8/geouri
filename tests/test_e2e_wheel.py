@@ -13,6 +13,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from wheel_cli import check_encoding
 from wheel_consumer import CHANGES, SNAPSHOT
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -100,6 +101,7 @@ def test_installed_wheel_end_to_end(tmp_path: Path, upgrade: bool) -> None:
     assert result.stdout.strip() == "e2e ok"
 
     script = bindir / ("geouri.exe" if sys.platform == "win32" else "geouri")
+    check_encoding(python, script, work)
     cli = _run(script, "geo:1.50,2;CRS=wgs84", "geo:1,2?z=3", cwd=work)
     assert cli.returncode == 1
     assert cli.stdout == "geo:1.5,2\n"
@@ -143,3 +145,15 @@ def test_distributions_ship_no_third_party_text(tmp_path: Path) -> None:
         line.startswith("Requires-Dist:") and "extra ==" not in line
         for line in metadata.splitlines()
     )
+    import venv
+
+    env_dir = tmp_path / "sdist-env"
+    venv.create(env_dir, with_pip=True)
+    bindir = env_dir / ("Scripts" if sys.platform == "win32" else "bin")
+    python = bindir / "python"
+    installed = _run(python, "-m", "pip", "install", "-q", sdist)
+    assert installed.returncode == 0, installed.stderr
+    work = tmp_path / "work"
+    work.mkdir()
+    script = bindir / ("geouri.exe" if sys.platform == "win32" else "geouri")
+    check_encoding(python, script, work)

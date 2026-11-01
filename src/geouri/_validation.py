@@ -45,6 +45,8 @@ def check_params(params: Mapping[str, str | None]) -> dict[str, str | None]:
     for raw, value in params.items():
         if not isinstance(raw, str) or not (value is None or isinstance(value, str)):
             raise TypeError("parameters must map str to str or None")
+        if value is not None:
+            value = str.__str__(value)
         name = label(raw, "param-name", "parameter name")
         if name in _RESERVED:
             raise GeoURIError("param-name", "crs and u have their own fields")

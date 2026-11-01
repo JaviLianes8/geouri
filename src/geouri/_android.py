@@ -76,6 +76,10 @@ def parse_android(uri: str) -> AndroidGeo:
         key, eq, value = item.partition("=")
         if not key or not eq or key in fields:
             raise GeoURIError("query", "malformed or repeated query field")
+        try:
+            key.encode("utf-8")
+        except UnicodeEncodeError:
+            raise GeoURIError("query", "query key is not encodable as UTF-8") from None
         fields[key] = _decode(value)
     zoom = _zoom(fields.pop("z")) if "z" in fields else None
     text = fields.pop("q", None)

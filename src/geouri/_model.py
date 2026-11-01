@@ -112,10 +112,9 @@ class GeoURI:
 def compare(a: GeoURI, b: GeoURI) -> bool | None:
     """Compare two geo: URIs per RFC 5870 section 3.4.4.
 
-    Returns None where the RFC calls the result undefined: everything else matches and
-    the same unknown parameter names appear, but some decoded values differ, which an
-    implementation that does not know those parameters cannot judge. URIs whose unknown
-    parameter names differ are not equivalent (the first rule for unknown parameters).
+    Returns None where the RFC calls the result undefined: known fields match but
+    unknown parameter names or decoded values differ. Their semantics cannot be judged
+    without knowing those parameters. Differences in known fields return False.
     Wrong argument types raise TypeError.
 
     >>> from geouri import compare, parse
@@ -124,7 +123,7 @@ def compare(a: GeoURI, b: GeoURI) -> bool | None:
     """
     if not isinstance(a, GeoURI) or not isinstance(b, GeoURI):
         raise TypeError("compare expects two GeoURI instances")
-    if a._key() != b._key() or set(a.params) != set(b.params):
+    if a._key() != b._key():
         return False
     return True if dict(a.params) == dict(b.params) else None
 
