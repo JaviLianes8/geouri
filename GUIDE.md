@@ -87,8 +87,10 @@ including in `args` and pickle state, so callers must avoid putting secrets ther
 
 `geouri` and `python -m geouri` accept URI arguments or one URI per stdin line.
 Only empty lines (after removing CR/LF terminators) are skipped; lines containing
-spaces or tabs are rejected with `invalid (scheme)`. Stdin bytes are decoded per
-line using the stream encoding. An undecodable line prints `invalid (encoding)`;
+spaces or tabs are rejected with `invalid (scheme)`. Stdin bytes are decoded
+incrementally using the stream encoding, preserving decoder state across records.
+CR, LF and CRLF delimit lines after decoding, including UTF-16 and UTF-32 input.
+An undecodable line prints `invalid (encoding)`;
 valid lines before and after it still produce output. This is a CLI diagnostic,
 not an additional `GeoURIError.reason`.
 `--json` emits exact JSON numbers and ASCII-escaped strings and keys; `--android` emits JSON

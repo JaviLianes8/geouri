@@ -34,6 +34,8 @@ All notable changes to this project are documented here. The format follows
   differ, including missing extensions, as well as when their decoded values differ.
 - Malformed stdin bytes produce a bounded `invalid (encoding)` CLI diagnostic per
   line and status 1, while valid batch lines before and after them are processed.
+- CLI stdin retains decoder state and recognizes CR, LF and CRLF after decoding,
+  restoring valid UTF-16/UTF-32 and CR-only batches while retaining malformed-line recovery.
 - Android query keys containing unpaired surrogates raise `GeoURIError` with reason
   `query` instead of reaching output serialization.
 - Accepted `GeoURI` parameter string subclasses are stored as built-in strings,
@@ -47,6 +49,8 @@ All notable changes to this project are documented here. The format follows
   contracts, fresh specification checks, and installed-wheel upgrade coverage.
 - Contracts for complete error `args` through pickling, non-default CRS through
   pickle and copy, Android newline pin labels, and whitespace-only stdin rejection.
+- Subprocess and installed-distribution contracts for stdin encodings, including
+  non-ASCII cp1252 queries, multibyte line endings and malformed-record recovery.
 - Explicit documentation of the existing restriction against repeated extension
   names, which RFC 5870 permits. The single-value parameter mapping remains stable.
 

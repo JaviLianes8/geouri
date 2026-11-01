@@ -15,6 +15,7 @@ from ._errors import GeoURIError
 from ._grammar import plain
 from ._model import GeoURI
 from ._parse import parse
+from ._stdin import lines as _lines
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -104,18 +105,3 @@ def _json(value: Any) -> str:
         items = (f"{json.dumps(k)}: {_json(v)}" for k, v in value.items())
         return "{" + ", ".join(items) + "}"
     return json.dumps(value)
-
-
-def _lines(stream: TextIO) -> Iterable[str | None]:
-    # Decode raw lines separately so text read-ahead cannot discard a valid batch.
-    lines: Iterable[bytes] | Iterable[str] = getattr(stream, "buffer", stream)
-    for line in lines:
-        if isinstance(line, bytes):
-            try:
-                line = line.decode(stream.encoding, errors="strict")
-            except UnicodeDecodeError:
-                yield None
-                continue
-        text = line.rstrip("\r\n")
-        if text:
-            yield text
