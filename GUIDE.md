@@ -91,8 +91,10 @@ spaces or tabs are rejected with `invalid (scheme)`. Stdin bytes are decoded
 incrementally using the stream encoding, preserving decoder state across records.
 CR, LF and CRLF delimit lines after decoding, including UTF-16 and UTF-32 input.
 An undecodable line prints `invalid (encoding)`;
-valid lines before and after it still produce output. This is a CLI diagnostic,
-not an additional `GeoURIError.reason`.
+valid lines before and after it still produce output when decoding can recover.
+If the decoder cannot recover, including a missing or damaged UTF-16/UTF-32 BOM,
+the batch stops with one `invalid (encoding)` diagnostic and status 1.
+This is a CLI diagnostic, not an additional `GeoURIError.reason`.
 `--json` emits exact JSON numbers and ASCII-escaped strings and keys; `--android` emits JSON
 for the Android form. Statuses are 0 for success, 1 for rejected input, and 2 for
 invalid options. Mixed batches continue after invalid lines. Diagnostics never

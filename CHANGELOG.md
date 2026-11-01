@@ -36,6 +36,9 @@ All notable changes to this project are documented here. The format follows
   line and status 1, while valid batch lines before and after them are processed.
 - CLI stdin retains decoder state and recognizes CR, LF and CRLF after decoding,
   restoring valid UTF-16/UTF-32 and CR-only batches while retaining malformed-line recovery.
+- Unrecoverable stdin decoding failures, including missing or damaged UTF-16/UTF-32
+  BOMs, stop the batch with one bounded `invalid (encoding)` diagnostic and status 1
+  instead of a traceback.
 - Android query keys containing unpaired surrogates raise `GeoURIError` with reason
   `query` instead of reaching output serialization.
 - Accepted `GeoURI` parameter string subclasses are stored as built-in strings,
@@ -51,6 +54,8 @@ All notable changes to this project are documented here. The format follows
   pickle and copy, Android newline pin labels, and whitespace-only stdin rejection.
 - Subprocess and installed-distribution contracts for stdin encodings, including
   non-ASCII cp1252 queries, multibyte line endings and malformed-record recovery.
+- Contracts for caller-owned stdin remaining open and reusable, and exact cp1252
+  euro query decoding from source and installed distributions.
 - Explicit documentation of the existing restriction against repeated extension
   names, which RFC 5870 permits. The single-value parameter mapping remains stable.
 

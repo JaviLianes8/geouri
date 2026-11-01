@@ -33,9 +33,13 @@ def lines(stream: TextIO) -> Iterable[str | None]:
 
 
 def _records(stream: TextIO) -> Iterable[str | None]:
-    for line in stream:
-        text = line.rstrip("\r\n")
-        if "\udcff" in text:
-            yield None
-        elif text:
-            yield text
+    try:
+        for line in stream:
+            text = line.rstrip("\r\n")
+            if "\udcff" in text:
+                yield None
+            elif text:
+                yield text
+    except UnicodeDecodeError:
+        # Some decoders bypass the callback; their state cannot safely resume.
+        yield None

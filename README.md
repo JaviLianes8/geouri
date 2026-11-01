@@ -145,7 +145,9 @@ Prints the canonical form of each URI, or reads one per line from standard input
 are given. `--json` prints the fields as JSON, `--android` reads the Android form and
 prints JSON. JSON strings and keys use ASCII escapes; numbers retain the exact decimals
 of the URI. Empty stdin lines are skipped; whitespace-only lines are rejected.
-Undecodable stdin lines print `invalid (encoding)` and processing continues.
+Undecodable stdin lines print `invalid (encoding)` and processing continues when
+decoding can recover. Unrecoverable decoding failures, including a missing or
+damaged UTF-16/UTF-32 BOM, stop the batch with that diagnostic and status 1.
 The exit status is 1 if any input is invalid and 2 for a usage error.
 
 ## API
