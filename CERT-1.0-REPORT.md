@@ -336,7 +336,8 @@ individual mutation output and JUnit results.
 ### Round 4 corrections, 2026-11-01
 
 Reviewed base: `74ee527044f2180d36524715f28f1691fffc602c`.
-Fix commit: `strengthen stdin decoding and case preservation contracts` (this commit).
+Fix commit: `2c916c4540035867df3746f4da2c6b170ed0f915`
+(`strengthen stdin decoding and case preservation contracts`).
 
 E-08, E-09 and E-10 identify missing contracts, with no production defect in the
 reviewed implementation. Twelve new source cases pass on that implementation.
