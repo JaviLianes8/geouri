@@ -5,6 +5,7 @@ Skips until `python scripts/fetch_upstream.py` has fetched rfc5870.txt.
 
 from __future__ import annotations
 
+import html
 import json
 import re
 from pathlib import Path
@@ -40,3 +41,18 @@ def test_the_manifest_and_the_examples_name_the_same_text() -> None:
     folder = Path(__file__).parent / "upstream"
     manifest = json.loads((folder / "MANIFEST.json").read_text(encoding="utf-8"))
     assert manifest["rfc5870.txt"]["sha256"] == DATA["sources"]["rfc5870"]["sha256"]
+
+
+def test_android_examples_match_the_fetched_guide() -> None:
+    text = html.unescape(read_upstream("android.html").decode("utf-8"))
+    examples = re.findall(r'Example: <code[^>]*>"(geo:[^"]+)"</code>', text)
+    assert examples == DATA["android_examples"]
+    for value in DATA["android_encoded_text"]:
+        assert f">{value}</code>" in text
+    assert "(closest) zoom level is 23" in text
+
+
+def test_erratum_8389_matches_the_corrected_examples() -> None:
+    text = html.unescape(read_upstream("errata8389.html").decode("utf-8"))
+    assert "Held for Document Update" in text
+    assert "<geo:22.300,-118.44> and <geo:22.3,-118.4400>" in text

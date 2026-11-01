@@ -32,7 +32,7 @@ def test_reports_invalid_uris_and_exits_one() -> None:
     code, out, err = _run(["geo:1,2", "geo:94,0", "geo:1,2?z=3"])
     assert code == 1
     assert out == "geo:1,2\n"
-    assert err == "invalid (latitude-range): geo:94,0\ninvalid (query): geo:1,2?z=3\n"
+    assert err == "invalid (latitude-range)\ninvalid (query)\n"
 
 
 def test_json_output_lists_every_field() -> None:
@@ -58,19 +58,19 @@ def test_android_mode_prints_json() -> None:
 
 
 def test_android_mode_reports_invalid_input() -> None:
-    assert _run(["--android", "geo:1,2?z=99"]) == (1, "", "invalid (zoom): geo:1,2?z=99\n")
+    assert _run(["--android", "geo:1,2?z=99"]) == (1, "", "invalid (zoom)\n")
 
 
-def test_invalid_input_is_printed_with_control_characters_escaped() -> None:
+def test_invalid_input_with_control_characters_is_not_echoed() -> None:
     code, _, err = _run([], "geo:1,2;x=\x1b[31m\n")
     assert code == 1
-    assert err == "invalid (param-value): geo:1,2;x=\\x1b[31m\n"
+    assert err == "invalid (param-value)\n"
 
 
 def test_usage_errors_exit_two_on_the_given_streams() -> None:
     code, out, err = _run(["--bogus"])
     assert (code, out) == (2, "")
-    assert "unrecognized arguments: --bogus" in err
+    assert "invalid command-line arguments" in err
 
 
 def test_help_goes_to_the_given_stdout() -> None:

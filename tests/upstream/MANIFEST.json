@@ -3,9 +3,29 @@
     "title": "RFC 5870, A Uniform Resource Identifier for Geographic Locations ('geo' URI)",
     "url": "https://www.rfc-editor.org/rfc/rfc5870.txt",
     "revision": "published June 2010",
-    "fetched": "2026-10-13",
+    "fetched": "2026-11-01",
     "size": 45943,
     "sha256": "a3bf93084c422508bbf64976e9adee1eae88d688a2e7f7fc3a531aa44ceb3bb1",
+    "licence": "IETF Trust Legal Provisions (BCP 78)"
+  },
+  "android.html": {
+    "title": "Android common intents, Maps",
+    "url": "https://developer.android.com/guide/components/intents-common?hl=en",
+    "revision": "Maps section only, retrieved 2026-11-01",
+    "fetched": "2026-11-01",
+    "size": 8877,
+    "sha256": "52782e7c641521a84c24d572ecd13cc12d3c5c86019f751fe01ed8be4a8a9c04",
+    "licence": "CC BY 4.0 prose; Apache 2.0 code samples",
+    "section_start": "<h2 id=\"Maps\"",
+    "section_end": "<h2 id=\"Music\""
+  },
+  "errata8389.html": {
+    "title": "RFC 5870 erratum 8389",
+    "url": "https://www.rfc-editor.org/errata/eid8389",
+    "revision": "Held for Document Update, retrieved 2026-11-01",
+    "fetched": "2026-11-01",
+    "size": 7659,
+    "sha256": "a362d87d1913d8997acab8734e1d26cb4af94b37d08356d31d0db8d056aedcfe",
     "licence": "IETF Trust Legal Provisions (BCP 78)"
   }
 }

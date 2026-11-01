@@ -8,7 +8,7 @@ from ._errors import GeoURIError, Reason
 from ._model import GeoURI, compare
 from ._parse import parse
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "AndroidGeo",
@@ -22,3 +22,6 @@ __all__ = [
     "parse",
     "parse_android",
 ]
+
+# Keep the import-only future feature out of the public surface.
+del annotations

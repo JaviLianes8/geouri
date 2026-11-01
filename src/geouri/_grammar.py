@@ -19,19 +19,33 @@ _ALPHANUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 # paramchar = p-unreserved / unreserved / pct-encoded
 PARAM_SAFE = frozenset(_ALPHANUM + "-_.!~*'()" + "[]:&+$")
 _HEX = frozenset("0123456789ABCDEFabcdef")
+MAX_NUMBER_LENGTH = 10_000
+
+
+def check_number_size(value: Decimal) -> None:
+    if value == 0:
+        return
+    _, digits, exponent = value.as_tuple()
+    exp = int(exponent)
+    if len(digits) + abs(exp) > MAX_NUMBER_LENGTH:
+        raise GeoURIError("number", "number exceeds the 10000 digit budget")
+    if len(plain(value)) > MAX_NUMBER_LENGTH:
+        raise GeoURIError("number", "number exceeds the 10000 character budget")
 
 
 def number(text: str, pattern: re.Pattern[str], reason: Reason, label: str) -> Decimal:
     """Read a decimal that must match `pattern` in full."""
+    if len(text) > MAX_NUMBER_LENGTH:
+        raise GeoURIError("number", "number exceeds the 10000 character budget")
     if not pattern.fullmatch(text):
-        raise GeoURIError(reason, f"invalid {label}: {text!r}")
+        raise GeoURIError(reason, f"invalid {label}")
     return Decimal(text)
 
 
 def label(text: str, reason: Reason, what: str) -> str:
     """Check a `labeltext` and return it in lower case."""
     if not LABEL.fullmatch(text):
-        raise GeoURIError(reason, f"invalid {what}: {text!r}")
+        raise GeoURIError(reason, f"invalid {what}")
     return text.lower()
 
 
@@ -47,18 +61,18 @@ def decode_value(text: str) -> str:
         if char == "%":
             pair = text[i + 1 : i + 3]
             if len(pair) != 2 or not set(pair) <= _HEX:
-                raise GeoURIError("param-value", f"bad percent-encoding in {text!r}")
+                raise GeoURIError("param-value", "bad percent-encoding")
             out.append(int(pair, 16))
             i += 3
             continue
         if char not in PARAM_SAFE:
-            raise GeoURIError("param-value", f"character {char!r} must be percent-encoded")
+            raise GeoURIError("param-value", "character must be percent-encoded")
         out.append(ord(char))
         i += 1
     try:
         return out.decode("utf-8")
     except UnicodeDecodeError:
-        raise GeoURIError("param-value", f"not UTF-8 after decoding: {text!r}") from None
+        raise GeoURIError("param-value", "not UTF-8 after decoding") from None
 
 
 def encode_value(value: str) -> str:
@@ -77,8 +91,9 @@ def plain(value: Decimal) -> str:
     sign, digit_tuple, exponent = value.as_tuple()
     digits = "".join(map(str, digit_tuple)).lstrip("0")
     exp = int(exponent)
-    while digits.endswith("0"):
-        digits, exp = digits[:-1], exp + 1
+    trimmed = digits.rstrip("0")
+    exp += len(digits) - len(trimmed)
+    digits = trimmed
     if exp >= 0:
         text = digits + "0" * exp
     elif len(digits) > -exp:

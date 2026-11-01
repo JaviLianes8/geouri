@@ -1,4 +1,10 @@
-"""The error raised for a malformed geo: URI, with a machine-readable reason."""
+"""Typed errors and the Reason literal alias for machine-readable failure causes.
+
+>>> from geouri import Reason, GeoURIError
+>>> reason: Reason = 'query'
+>>> GeoURIError(reason).reason
+'query'
+"""
 
 from __future__ import annotations
 
@@ -21,11 +27,26 @@ Reason = Literal[
     "zoom",
 ]
 
+Reason.__doc__ = """The closed set of machine-readable GeoURIError reasons.
+
+>>> from geouri import Reason, GeoURIError
+>>> reason: Reason = 'zoom'
+>>> GeoURIError(reason).reason
+'zoom'
+"""
+
 
 class GeoURIError(ValueError):
     """Raised when a geo: URI is malformed or a coordinate is out of range.
 
     `reason` names the rule that failed, from the closed set `Reason`.
+    Library-generated messages contain no input values. A caller-supplied message
+    is preserved verbatim; callers are responsible for its contents.
+
+    >>> from geouri import GeoURIError
+    >>> error = GeoURIError('zoom', 'outside supported range')
+    >>> (error.reason, str(error))
+    ('zoom', 'zoom: outside supported range')
     """
 
     reason: Reason

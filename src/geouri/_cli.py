@@ -8,7 +8,7 @@ import json
 import sys
 from collections.abc import Iterable, Sequence
 from decimal import Decimal
-from typing import Any, TextIO
+from typing import Any, NoReturn, TextIO
 
 from ._android import AndroidGeo, parse_android
 from ._errors import GeoURIError
@@ -17,8 +17,14 @@ from ._model import GeoURI
 from ._parse import parse
 
 
+class _ArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        self.print_usage(sys.stderr)
+        self.exit(2, "geouri: invalid command-line arguments\n")
+
+
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = _ArgumentParser(
         prog="geouri",
         description="Validate geo: URIs (RFC 5870) and print their canonical form. "
         "Reads one URI per line from standard input when none are given.",
@@ -55,7 +61,7 @@ def main(
                 parsed = parse(uri)
                 line = _json(_fields(parsed)) if args.json else str(parsed)
         except GeoURIError as error:
-            err.write(f"invalid ({error.reason}): {_shown(uri)}\n")
+            err.write(f"invalid ({error.reason})\n")
             status = 1
             continue
         out.write(line + "\n")
@@ -101,8 +107,3 @@ def _lines(stream: TextIO) -> Iterable[str]:
         text = line.rstrip("\r\n")
         if text:
             yield text
-
-
-def _shown(uri: str) -> str:
-    """The input as safe to print: control and other unprintable characters escaped."""
-    return "".join(c if c.isprintable() else repr(c)[1:-1] for c in uri)
