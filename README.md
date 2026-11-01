@@ -82,8 +82,8 @@ print(build(1, 2, crs="WGS84", params=params))  # geo:1,2;name=Caf%C3%A9%20&%20b
 
 `build` validates everything `parse` checks, writes each number in its shortest exact
 decimal form (a float reads back as the same float, a `Decimal` keeps its digits), writes
-longitude 0 at a pole as section 3.4.2 recommends, writes the date line as 180 so equal
-URIs print the same text, leaves out the default `crs`, and
+longitude 0 at a pole as section 3.4.2 recommends, writes date-line longitudes as 180,
+leaves out the default `crs`, and
 percent-encodes parameter values. Booleans, strings and non-finite numbers are refused.
 
 ### Compare
@@ -191,8 +191,8 @@ model construction and upgrade details, and the
 `scripts/check.ps1` runs the gate (format, lint, `mypy --strict`, tests).
 `python scripts/fetch_upstream.py --output PATH` fetches the RFC text listed in
 `tests/upstream/MANIFEST.json`, so the test that checks the committed examples against it
-runs instead of skipping when `GEOURI_UPSTREAM=PATH` is set. `GEOURI_E2E=1` builds the wheel, installs it in a fresh virtual
-environment and drives it.
+runs instead of skipping when `GEOURI_UPSTREAM=PATH` is set. `GEOURI_E2E=1` builds
+the wheel, installs it in a fresh virtual environment and drives it.
 
 ## License
 

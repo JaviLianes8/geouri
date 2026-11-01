@@ -9,11 +9,11 @@ import os
 import subprocess
 import sys
 import tarfile
-import venv
 import zipfile
 from pathlib import Path
 
 import pytest
+from wheel_consumer import CHANGES, SNAPSHOT
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,26 +53,48 @@ print("e2e ok")
 
 def _run(*cmd: str | Path, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [str(c) for c in cmd], cwd=cwd, capture_output=True, text=True, check=False
+        [str(c) for c in cmd], cwd=cwd, capture_output=True, text=True, check=False, timeout=240
     )
 
 
-def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
+@pytest.mark.parametrize("upgrade", [False, True])
+def test_installed_wheel_end_to_end(tmp_path: Path, upgrade: bool) -> None:
+    if upgrade and os.environ.get("GEOURI_E2E_PYPI") != "1":
+        pytest.skip("set GEOURI_E2E_PYPI=1 for the live PyPI upgrade")
     dist = tmp_path / "dist"
     built = _run(sys.executable, "-m", "build", "--wheel", "--outdir", dist, ROOT)
     assert built.returncode == 0, built.stderr
     (wheel,) = dist.glob("geouri-*.whl")
 
     env_dir = tmp_path / "venv"
+    import venv
+
     venv.create(env_dir, with_pip=True)
     bindir = env_dir / ("Scripts" if sys.platform == "win32" else "bin")
     python = bindir / "python"
+    work = tmp_path / "work"
+    work.mkdir()
+    before = ""
+    if upgrade:
+        old = _run(
+            python,
+            "-m",
+            "pip",
+            "install",
+            "--index-url",
+            "https://pypi.org/simple",
+            "geouri==0.2.0",
+        )
+        assert old.returncode == 0, old.stderr
+        snapshot = _run(python, "-I", "-c", SNAPSHOT, cwd=work)
+        assert snapshot.returncode == 0, snapshot.stderr
+        before = snapshot.stdout
+        changes = _run(python, "-I", "-c", CHANGES, "0.2.0", cwd=work)
+        assert changes.returncode == 0, changes.stderr
     installed = _run(python, "-m", "pip", "install", "-q", wheel)
     assert installed.returncode == 0, installed.stderr
 
     # Run from an empty folder so the source tree cannot shadow the install.
-    work = tmp_path / "work"
-    work.mkdir()
     result = _run(python, "-I", "-c", PROGRAM, cwd=work)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "e2e ok"
@@ -82,6 +104,18 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     assert cli.returncode == 1
     assert cli.stdout == "geo:1.5,2\n"
     assert cli.stderr == "invalid (query)\n"
+    android = _run(script, "--android", "geo:0,0?q=Main+Street&z=3", cwd=work)
+    assert android.returncode == 0 and '"query": "Main Street"' in android.stdout
+    module = _run(python, "-I", "-m", "geouri", "--json", "geo:1,2", cwd=work)
+    assert module.returncode == 0 and '"lat": 1' in module.stdout
+    usage = _run(script, "--unknown", cwd=work)
+    assert usage.returncode == 2 and "--unknown" not in usage.stderr
+    if upgrade:
+        snapshot = _run(python, "-I", "-c", SNAPSHOT, cwd=work)
+        assert snapshot.returncode == 0, snapshot.stderr
+        assert snapshot.stdout == before
+        changes = _run(python, "-I", "-c", CHANGES, "1.0.0", cwd=work)
+        assert changes.returncode == 0, changes.stderr
 
 
 def test_distributions_ship_no_third_party_text(tmp_path: Path) -> None:
@@ -97,3 +131,15 @@ def test_distributions_ship_no_third_party_text(tmp_path: Path) -> None:
     assert "tests/data/examples.json" in names
     assert not any(n.endswith("rfc5870.txt") for n in names), names
     assert not any(n.startswith((".github", "IMPROVEMENTS")) for n in names), names
+    assert {"LICENSE", "README.md", "GUIDE.md", "CHANGELOG.md", "pyproject.toml"} <= set(names)
+    assert "geouri/py.typed" in wheel_names
+    assert any(n.endswith("/licenses/LICENSE") for n in wheel_names)
+    assert not any("__pycache__" in n or n.endswith((".pyc", ".html")) for n in names)
+    assert not any(n.startswith(("tests/", "scripts/")) for n in wheel_names)
+    metadata = zipfile.ZipFile(wheel).read("geouri-1.0.0.dist-info/METADATA").decode()
+    assert "Development Status :: 5 - Production/Stable" in metadata
+    assert "Requires-Python: >=3.10" in metadata
+    assert not any(
+        line.startswith("Requires-Dist:") and "extra ==" not in line
+        for line in metadata.splitlines()
+    )

@@ -27,6 +27,14 @@ Reason = Literal[
     "zoom",
 ]
 
+Reason.__doc__ = """The closed set of machine-readable GeoURIError reasons.
+
+>>> from geouri import Reason, GeoURIError
+>>> reason: Reason = 'zoom'
+>>> GeoURIError(reason).reason
+'zoom'
+"""
+
 
 class GeoURIError(ValueError):
     """Raised when a geo: URI is malformed or a coordinate is out of range.

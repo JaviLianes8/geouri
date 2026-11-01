@@ -49,3 +49,10 @@ def test_android_examples_match_the_fetched_guide() -> None:
     assert examples == DATA["android_examples"]
     for value in DATA["android_encoded_text"]:
         assert f">{value}</code>" in text
+    assert "(closest) zoom level is 23" in text
+
+
+def test_erratum_8389_matches_the_corrected_examples() -> None:
+    text = html.unescape(read_upstream("errata8389.html").decode("utf-8"))
+    assert "Held for Document Update" in text
+    assert "<geo:22.300,-118.44> and <geo:22.3,-118.4400>" in text

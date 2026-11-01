@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from decimal import Decimal
 
 from ._errors import GeoURIError
-from ._grammar import check_number_size, label
+from ._grammar import MAX_NUMBER_LENGTH, check_number_size, label
 
 DEFAULT_CRS = "wgs84"
 _RESERVED = frozenset({"crs", "u"})
@@ -15,6 +15,8 @@ _RESERVED = frozenset({"crs", "u"})
 def exact_number(value: object, what: str) -> Decimal:
     if isinstance(value, bool) or not isinstance(value, (int, float, Decimal)):
         raise TypeError(f"{what} must be a number")
+    if isinstance(value, int) and value.bit_length() > 4 * MAX_NUMBER_LENGTH:
+        raise GeoURIError("number", "number exceeds the 10000 digit budget")
     # float.__repr__ gives the shortest text that reads back as the same float, also for
     # float subclasses whose own repr adds a type name.
     exact = Decimal(float.__repr__(value)) if isinstance(value, float) else Decimal(value)

@@ -33,8 +33,13 @@ def test_public_docstrings_and_guide_examples_run() -> None:
         attempted += count
     assert attempted >= 20
     for name in geouri.__all__:
-        if name != "Reason":
-            assert ">>>" in (getattr(geouri, name).__doc__ or "")
+        assert ">>>" in (getattr(geouri, name).__doc__ or "")
+    runner = doctest.DocTestRunner()
+    example = doctest.DocTestParser().get_doctest(
+        geouri.Reason.__doc__ or "", {}, "Reason", None, 0
+    )
+    runner.run(example)
+    assert runner.failures == 0 and runner.tries == 3
     guide = Path(__file__).resolve().parents[1] / "GUIDE.md"
     failed, count = doctest.testfile(str(guide), module_relative=False)
     assert failed == 0 and count >= 7
@@ -97,7 +102,7 @@ def test_cli_diagnostics_never_echo_inputs_or_unknown_options() -> None:
 
 
 def test_numeric_budgets_reject_before_expansion() -> None:
-    for value in (Decimal("1e10000"), Decimal("1e-10000"), 10**10000):
+    for value in (Decimal("1e10000"), Decimal("1e-10000"), 10**10000, 10**100_000):
         with pytest.raises(GeoURIError) as caught:
             build(value, 0, crs="custom")
         assert caught.value.reason == "number"
@@ -107,6 +112,16 @@ def test_numeric_budgets_reject_before_expansion() -> None:
     assert str(parse("geo:0,0," + "0" * 10_000)) == "geo:0,0,0"
     assert build(Decimal("0e999999999"), 0) == "geo:0,0"
     assert build(Decimal("1e9999"), 0, crs="x") == "geo:" + "1" + "0" * 9999 + ",0;crs=x"
+
+
+def test_built_numbers_at_the_budget_boundary_parse_back() -> None:
+    for value in (Decimal("1e-9997"), Decimal("-1e-9997"), Decimal("-1e9998")):
+        text = build(value, 0, crs="x")
+        assert str(parse(text)) == text
+    for value in (Decimal("1e-9999"), Decimal("-1e9999")):
+        with pytest.raises(GeoURIError) as caught:
+            build(value, 0, crs="x")
+        assert caught.value.reason == "number"
 
 
 def test_huge_zoom_is_a_typed_error() -> None:

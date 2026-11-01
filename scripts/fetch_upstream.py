@@ -28,6 +28,10 @@ def main() -> int:
     for name, entry in manifest.items():
         with urllib.request.urlopen(entry["url"], timeout=60) as response:
             body = response.read()
+        if "section_start" in entry:
+            start = body.index(entry["section_start"].encode())
+            end = body.index(entry["section_end"].encode(), start + 1)
+            body = body[start:end]
         digest = hashlib.sha256(body).hexdigest()
         if len(body) != entry["size"] or digest != entry["sha256"]:
             print(f"{name}: got {len(body)} bytes, sha256 {digest}; manifest differs")

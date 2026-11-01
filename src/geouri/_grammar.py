@@ -29,6 +29,8 @@ def check_number_size(value: Decimal) -> None:
     exp = int(exponent)
     if len(digits) + abs(exp) > MAX_NUMBER_LENGTH:
         raise GeoURIError("number", "number exceeds the 10000 digit budget")
+    if len(plain(value)) > MAX_NUMBER_LENGTH:
+        raise GeoURIError("number", "number exceeds the 10000 character budget")
 
 
 def number(text: str, pattern: re.Pattern[str], reason: Reason, label: str) -> Decimal:

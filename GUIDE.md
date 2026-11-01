@@ -65,8 +65,8 @@ coordinates is rejected by `build_android_query`; use `build_android` for pins.
 
 ## Resource and diagnostic contracts
 
-A numeric token may contain at most 10,000 characters, including its sign and
-decimal point. For nonzero values, coefficient digits plus absolute decimal
+A numeric token, parsed or built, may contain at most 10,000 characters, including
+its sign and decimal point. For nonzero values, coefficient digits plus absolute decimal
 exponent must also total at most 10,000. These are resource limits, not RFC rules;
 violations raise `GeoURIError` with reason `number`. Other text has no fixed size
 limit; memory use grows with input size. Decimal arithmetic context settings do
