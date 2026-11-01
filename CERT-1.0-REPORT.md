@@ -14,6 +14,7 @@ Progress:
 - [x] Final four gates and pull request #3
 - [x] QA round 1 corrections and contract verification
 - [x] QA round 2 corrections and stdin contract verification
+- [x] QA round 3 corrections and decoder boundary contracts
 - [ ] Independent reviewer (item 16)
 - [ ] Five independent QA lenses (item 19)
 - [ ] Merge and publish (item 17)
@@ -281,6 +282,55 @@ and a scratch basetemp. No interpreter matrix was repeated this round.
 Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r2/`:
 `red.txt`, `red.xml`, `green.xml`, `full.txt`, `full.xml`, and `N15-original/`
 and `N15-fixed/`, each containing mutation output and JUnit results.
+
+### Round 3 corrections, 2026-11-01
+
+Reviewed base: `9026b143ee1d8e35ee04a9a7ea498960934dc3b4`.
+Fix commit: `5c7e869ebce832dbbcf64492a3174d2be9329380`
+(`fix unrecoverable stdin decoding and strengthen contracts`).
+
+All five supplied findings are addressed. B-04, C-005 and D-003 describe the
+same unrecoverable decoder failure; E-06 and E-07 identify missing contracts.
+Independent lens re-verification and item 16 review remain pending. No new
+lens verdict, merge or publication is claimed by this correction run.
+
+| Finding | Change and verification |
+| --- | --- |
+| B-04 | Catch `UnicodeDecodeError` escaping stdin iteration, emit one bounded `invalid (encoding)` diagnostic and stop safely with status 1. Eighteen subprocess cases cover UTF-16/UTF-32 missing or damaged BOMs and ASCII prefixes in canonical, JSON and Android modes. |
+| C-005 | Retain recoverable-record handling while stopping when decoder state cannot resume. Contracts assert empty stdout and the exact diagnostic, and verify caller-owned handles remain open and reusable after both recoverable and unrecoverable errors. |
+| D-003 | Wheel and sdist consumers exercise missing/damaged BOM and ASCII-prefix rejection through both module and console entry points, asserting status 1, empty stdout and the exact encoding diagnostic. |
+| E-06 | A caller-owned TextIOWrapper over BytesIO remains open after success or either decoding failure. Contracts rewind and read the original bytes, then rewrite and read through the same text stream. They kill R09. |
+| E-07 | Source and installed-distribution subprocesses supply byte 0x80 under cp1252 and assert query U+20AC, status 0 and empty stderr. These contracts kill R18 in source, wheel and sdist tests. The previous cp1252 accented-text contract still kills forced UTF-8 decoding. |
+
+Before the runtime correction, the new contract file reported **19 failed,
+3 passed**, reproducing the decoder failure while preserving the successful
+ownership and codec-identity cases. After correction, all three CLI contract
+files reported **77 passed**. The public API remains unchanged. README and GUIDE
+describe unrecoverable batch termination, and CHANGELOG records the behavior
+change and added contracts.
+
+Mutations were applied individually in scratch copies and restored afterward.
+Each failure below was an assertion failure, with no collection errors or timeouts.
+
+| Mutation replay | Result | Catching contract |
+| --- | --- | --- |
+| R09: replace `reader.detach()` with `reader.close()` | Killed: three failed cases | `test_stdin_remains_open_and_reusable_by_caller` |
+| R18: replace cp1252 decoding with Latin-1 | Killed: source, installed wheel and installed sdist assertions | `test_cp1252_stdin_preserves_euro_query` and installed `_check_cp1252_euro` |
+| E-05 replay: force UTF-8 decoding | Killed: one failed case | `test_stdin_uses_the_configured_cp1252_codec` |
+
+Each required gate exited 0: `ruff format --check .`, `ruff check .`,
+`mypy --strict src`, and pytest. Strict typing also passed for `src tests`.
+The complete suite reported **369 passed, no skips** in 110.66 seconds on CPython
+3.14.6 with manifest-checked upstream references, `GEOURI_E2E=1` and
+`GEOURI_E2E_PYPI=1`. It built and installed the wheel and sdist, checked both CLI
+entry points, and exercised an actual PyPI 0.2.0 upgrade. Every pytest run used
+a 300-second per-test timeout and a scratch basetemp. No interpreter matrix was
+repeated this round.
+
+Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r3/`:
+`red.txt`, `red.xml`, `green.xml`, `full-3.txt`, `full.xml`, `full-gates.json`,
+and `mutations.json`. The `R09/`, `R18/` and `E05/` directories contain the
+individual mutation output and JUnit results.
 
 ### Disputed findings
 
