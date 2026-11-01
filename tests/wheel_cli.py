@@ -8,10 +8,13 @@ import subprocess
 from decimal import Decimal
 from pathlib import Path
 
+from wheel_records import check_records
+
 
 def check_encoding(python: Path, script: Path, work: Path) -> None:
     number = "1.123456789012345678901"
     for command in ([str(python), "-m", "geouri"], [str(script)]):
+        check_records(command, work)
         _check_stdin(command, work)
         _check_bom_errors(command, work)
         _check_cp1252_euro(command, work)

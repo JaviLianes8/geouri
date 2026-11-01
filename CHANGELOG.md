@@ -58,6 +58,8 @@ All notable changes to this project are documented here. The format follows
   euro query decoding from source and installed distributions.
 - Source and installed-distribution contracts for one fatal decoding diagnostic
   across multiple buffers, embedded invalid bytes and mixed-case stdin query data.
+- Source and installed-distribution contracts for duplicate stdin record counts
+  and order, one diagnostic per malformed record, and preserved query whitespace.
 - Explicit documentation of the existing restriction against repeated extension
   names, which RFC 5870 permits. The single-value parameter mapping remains stable.
 

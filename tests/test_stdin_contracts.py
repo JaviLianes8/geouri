@@ -91,3 +91,41 @@ def test_stdin_preserves_query_case(encoding: str) -> None:
     assert records[0]["query"] == "Main Street"
     assert records[1]["label"] == "Town Hall"
     assert records[1]["point"]["params"] == {"name": "Blue"}
+
+
+@pytest.mark.parametrize("args", [[], ["--json"], ["--android"]])
+def test_duplicate_stdin_records_preserve_count_and_order(args: list[str]) -> None:
+    expected = ["geo:3,4", "geo:1,2", "geo:1,2", "geo:5,6", "geo:1,2"]
+    result = _run(args, ("\n".join(expected) + "\n").encode())
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == b""
+    assert _output_uris(result.stdout, args) == expected
+
+
+@pytest.mark.parametrize("args", [[], ["--json"], ["--android"]])
+def test_each_malformed_stdin_record_has_one_diagnostic(args: list[str]) -> None:
+    data = b"geo:3,4\n\xff\ngeo:1,2\n\xff\xff\ngeo:5,6\n\xff\n"
+    result = _run(args, data)
+    assert result.returncode == 1
+    assert result.stderr.decode().splitlines() == ["invalid (encoding)"] * 3
+    assert _output_uris(result.stdout, args) == ["geo:3,4", "geo:1,2", "geo:5,6"]
+
+
+@pytest.mark.parametrize("query", ["Main\tStreet", " Main\t\tStreet ", "\tMain Street\t"])
+def test_stdin_preserves_query_whitespace(query: str) -> None:
+    result = _run(["--android"], f"geo:0,0?q={query}\n".encode())
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == b""
+    records = [json.loads(line) for line in result.stdout.decode().splitlines()]
+    assert len(records) == 1
+    assert records[0]["query"] == query
+
+
+def _output_uris(output: bytes, args: list[str]) -> list[str]:
+    lines = output.decode().splitlines()
+    if not args:
+        return lines
+    records = [json.loads(line) for line in lines]
+    if args == ["--android"]:
+        return [record["point"]["uri"] for record in records]
+    return [record["uri"] for record in records]
