@@ -16,6 +16,7 @@ Progress:
 - [x] QA round 2 corrections and stdin contract verification
 - [x] QA round 3 corrections and decoder boundary contracts
 - [x] QA round 4 corrections and stdin mutation contracts
+- [x] QA round 5 corrections and record multiplicity contracts
 - [ ] Independent reviewer (item 16)
 - [ ] Five independent QA lenses (item 19)
 - [ ] Merge and publish (item 17)
@@ -377,6 +378,52 @@ per-test timeout and a scratch basetemp. No interpreter matrix was repeated.
 Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r4/`:
 `baseline.txt`, `baseline.xml`, `full-4.txt`, `full.xml`, `full-gates.json`,
 `mutations.json`, and the `N06`, `N11` and `N20` source/installed text and JUnit
+logs. The mutation source copies were restored after verification.
+
+### Round 5 corrections, 2026-11-01
+
+Reviewed base: `fee943e841f4ee58dda7c4165f25dcb3e2eaedfe`.
+Fix commit: `fb8dfed7faf09e49b475a4e3c611c03c81abbcc2`
+(`strengthen stdin multiplicity and whitespace contracts`).
+
+E-11, E-12 and E-13 identify missing contracts, with no production defect in the
+reviewed implementation. Nine new source cases pass on that implementation.
+The runtime and public API remain unchanged; CHANGELOG records the added coverage.
+Independent lens re-verification and item 16 review remain pending.
+
+| Finding | Change and verification |
+| --- | --- |
+| E-11 | Canonical, JSON and Android modes must retain consecutive and nonconsecutive duplicate records. Source and installed contracts assert the exact five-record output sequence, including distinct neighboring records. |
+| E-12 | Three malformed records interleaved with valid records must emit exactly three encoding diagnostics and preserve the valid output sequence. A record containing two invalid bytes still produces one diagnostic. All three output modes are covered. |
+| E-13 | Android queries preserve literal tabs, repeated tabs, and leading and trailing spaces or tabs. Source and installed contracts assert the exact query text, output count, successful status and empty stderr. |
+
+Installed checks exercise both module and console entry points after wheel and
+sdist installation, from empty consumer directories with the source path excluded.
+All inputs added this round are hand-written contract cases.
+
+The exact R05, R06 and R10 patches were replayed individually in scratch copies.
+Each caused assertion failures in the new source contracts and in both installed
+distribution tests, with no collection errors or timeouts. The live upgrade was
+disabled for mutation runs; it passed in the full unmodified run.
+
+| Mutation replay | Source result and catching contract | Installed result |
+| --- | --- | --- |
+| R05: skip consecutive identical records | Three failures in `test_duplicate_stdin_records_preserve_count_and_order` | Wheel and sdist fail the exact record sequence assertion in `check_records` |
+| R06: report only the first recoverable decoding error | Three failures in `test_each_malformed_stdin_record_has_one_diagnostic` | Wheel and sdist fail the diagnostic count assertion in `check_records` |
+| R10: replace tabs with spaces | Three failures in `test_stdin_preserves_query_whitespace` | Wheel and sdist fail the exact query assertion in `check_records` |
+
+All 43 tests in `test_stdin_contracts.py` passed on the unchanged implementation.
+Each required gate exited 0: `ruff format --check .`, `ruff check .`,
+`mypy --strict src`, and pytest. Strict typing also passed for `src tests`.
+The complete suite reported **390 passed, no skips** in 115.04 seconds on CPython
+3.14.6 with manifest-checked upstream references, `GEOURI_E2E=1` and
+`GEOURI_E2E_PYPI=1`. This includes wheel and sdist installation, both CLI entry
+points and an actual PyPI 0.2.0 upgrade. Every pytest run used a 300-second
+per-test timeout and a scratch basetemp. No interpreter matrix was repeated.
+
+Local evidence is under `C:/lianes8-build/codex-pylib/scratch/geouri-cert/fix-r5/`:
+`baseline.txt`, `baseline.xml`, `full-4.txt`, `full.xml`, `full-gates.json`,
+`mutations.json`, and the `R05`, `R06` and `R10` source/installed text and JUnit
 logs. The mutation source copies were restored after verification.
 
 ### Disputed findings
